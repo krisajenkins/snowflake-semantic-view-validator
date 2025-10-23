@@ -7,10 +7,10 @@ Description: This semantic model describes the Speedrun dataset from Kaggle, bas
 
 TABLES (2)
 --------------------------------------------------------------------------------
-Name         | Location                        | Dimensions | Time | Facts | Metrics | Filters
--------------|---------------------------------|------------|------|-------|---------|--------
-GAMES        | KJ_SPEEDRUN.PUBLIC.GAMES        |         16 |    2 |     0 |       0 |       0
-LEADERBOARDS | KJ_SPEEDRUN.PUBLIC.LEADERBOARDS |         10 |    2 |     4 |       0 |       0
+Name         | Location                        | Dimensions | Time | Facts | Metrics | Filters | Described | Aliased
+-------------|---------------------------------|------------|------|-------|---------|---------|-----------|--------
+GAMES        | KJ_SPEEDRUN.PUBLIC.GAMES        |         16 |    2 |     0 |       0 |       0 |        0% |      0%
+LEADERBOARDS | KJ_SPEEDRUN.PUBLIC.LEADERBOARDS |         10 |    2 |     4 |       0 |       0 |        0% |      0%
 
 RELATIONSHIPS (0)
 --------------------------------------------------------------------------------
@@ -23,6 +23,14 @@ VERIFIED QUERIES (0)
 CUSTOM INSTRUCTIONS
 --------------------------------------------------------------------------------
   No custom instructions defined
+
+DATA QUALITY METRICS
+--------------------------------------------------------------------------------
+  Described Columns: 0 / 34 (0.0%)
+  Aliased Columns: 0 / 34 (0.0%)
+
+  TIP: Descriptions and synonyms help LLMs understand your data model better.
+       Aim for 80%+ described columns and 60%+ aliased columns for optimal results.
 
 ================================================================================
 * Validation successful!

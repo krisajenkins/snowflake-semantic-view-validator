@@ -7,12 +7,12 @@ Description: Test semantic model with multiple relationships and different join 
 
 TABLES (4)
 --------------------------------------------------------------------------------
-Name      | Location                  | Dimensions | Time | Facts | Metrics | Filters
-----------|---------------------------|------------|------|-------|---------|--------
-CUSTOMERS | SALES_DB.PUBLIC.CUSTOMERS |          3 |    0 |     0 |       0 |       0
-ORDERS    | SALES_DB.PUBLIC.ORDERS    |          3 |    1 |     1 |       0 |       0
-PRODUCTS  | SALES_DB.PUBLIC.PRODUCTS  |          3 |    0 |     0 |       0 |       0
-REGIONS   | SALES_DB.PUBLIC.REGIONS   |          2 |    0 |     0 |       0 |       0
+Name      | Location                  | Dimensions | Time | Facts | Metrics | Filters | Described | Aliased
+----------|---------------------------|------------|------|-------|---------|---------|-----------|--------
+CUSTOMERS | SALES_DB.PUBLIC.CUSTOMERS |          3 |    0 |     0 |       0 |       0 |        0% |      0%
+ORDERS    | SALES_DB.PUBLIC.ORDERS    |          3 |    1 |     1 |       0 |       0 |        0% |      0%
+PRODUCTS  | SALES_DB.PUBLIC.PRODUCTS  |          3 |    0 |     0 |       0 |       0 |        0% |      0%
+REGIONS   | SALES_DB.PUBLIC.REGIONS   |          2 |    0 |     0 |       0 |       0 |        0% |      0%
 
 RELATIONSHIPS (3)
 --------------------------------------------------------------------------------
@@ -29,6 +29,14 @@ VERIFIED QUERIES (0)
 CUSTOM INSTRUCTIONS
 --------------------------------------------------------------------------------
   No custom instructions defined
+
+DATA QUALITY METRICS
+--------------------------------------------------------------------------------
+  Described Columns: 0 / 13 (0.0%)
+  Aliased Columns: 0 / 13 (0.0%)
+
+  TIP: Descriptions and synonyms help LLMs understand your data model better.
+       Aim for 80%+ described columns and 60%+ aliased columns for optimal results.
 
 ================================================================================
 * Validation successful!

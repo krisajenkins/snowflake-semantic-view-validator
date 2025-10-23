@@ -27,9 +27,9 @@ Description: Example with legacy custom_instructions (should trigger warning)
 
 TABLES (1)
 --------------------------------------------------------------------------------
-Name  | Location              | Dimensions | Time | Facts | Metrics | Filters
-------|-----------------------|------------|------|-------|---------|--------
-SALES | SALES_DB.PUBLIC.SALES |          1 |    0 |     1 |       0 |       0
+Name  | Location              | Dimensions | Time | Facts | Metrics | Filters | Described | Aliased
+------|-----------------------|------------|------|-------|---------|---------|-----------|--------
+SALES | SALES_DB.PUBLIC.SALES |          1 |    0 |     1 |       0 |       0 |        0% |      0%
 
 RELATIONSHIPS (0)
 --------------------------------------------------------------------------------
@@ -53,6 +53,14 @@ CUSTOM INSTRUCTIONS
       Ensure that all numeric columns are rounded to 2 decimal points in the output.
       For any percentage or rate calculation, multiply the result by 100.
 
+
+DATA QUALITY METRICS
+--------------------------------------------------------------------------------
+  Described Columns: 0 / 2 (0.0%)
+  Aliased Columns: 0 / 2 (0.0%)
+
+  TIP: Descriptions and synonyms help LLMs understand your data model better.
+       Aim for 80%+ described columns and 60%+ aliased columns for optimal results.
 
 ================================================================================
 * Validation successful!

@@ -7,10 +7,10 @@ Description: Test semantic model with composite join keys in relationships
 
 TABLES (2)
 --------------------------------------------------------------------------------
-Name        | Location                    | Dimensions | Time | Facts | Metrics | Filters
-------------|-----------------------------|------------|------|-------|---------|--------
-ORDER_ITEMS | SALES_DB.PUBLIC.ORDER_ITEMS |          4 |    0 |     1 |       0 |       0
-INVENTORY   | SALES_DB.PUBLIC.INVENTORY   |          3 |    0 |     1 |       0 |       0
+Name        | Location                    | Dimensions | Time | Facts | Metrics | Filters | Described | Aliased
+------------|-----------------------------|------------|------|-------|---------|---------|-----------|--------
+ORDER_ITEMS | SALES_DB.PUBLIC.ORDER_ITEMS |          4 |    0 |     1 |       0 |       0 |        0% |      0%
+INVENTORY   | SALES_DB.PUBLIC.INVENTORY   |          3 |    0 |     1 |       0 |       0 |        0% |      0%
 
 RELATIONSHIPS (1)
 --------------------------------------------------------------------------------
@@ -25,6 +25,14 @@ VERIFIED QUERIES (0)
 CUSTOM INSTRUCTIONS
 --------------------------------------------------------------------------------
   No custom instructions defined
+
+DATA QUALITY METRICS
+--------------------------------------------------------------------------------
+  Described Columns: 0 / 9 (0.0%)
+  Aliased Columns: 0 / 9 (0.0%)
+
+  TIP: Descriptions and synonyms help LLMs understand your data model better.
+       Aim for 80%+ described columns and 60%+ aliased columns for optimal results.
 
 ================================================================================
 * Validation successful!

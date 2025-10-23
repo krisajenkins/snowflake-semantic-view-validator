@@ -375,6 +375,224 @@ pub fn format_warnings(warnings: &[ValidationWarning]) -> ColoredDoc {
         .append(ColoredDoc::line())
 }
 
+/// Count columns with descriptions across all tables
+fn count_described_columns(model: &SemanticModel) -> (usize, usize) {
+    let mut total = 0;
+    let mut described = 0;
+
+    for table in &model.tables {
+        // Count dimensions
+        for dim in &table.dimensions {
+            total += 1;
+            if dim.description.is_some() {
+                described += 1;
+            }
+        }
+        // Count time dimensions
+        for time_dim in &table.time_dimensions {
+            total += 1;
+            if time_dim.description.is_some() {
+                described += 1;
+            }
+        }
+        // Count facts
+        for fact in &table.facts {
+            total += 1;
+            if fact.description.is_some() {
+                described += 1;
+            }
+        }
+        // Count metrics
+        for metric in &table.metrics {
+            total += 1;
+            if metric.description.is_some() {
+                described += 1;
+            }
+        }
+        // Count filters
+        for filter in &table.filters {
+            total += 1;
+            if filter.description.is_some() {
+                described += 1;
+            }
+        }
+    }
+
+    // Count model-level metrics
+    for metric in &model.metrics {
+        total += 1;
+        if metric.description.is_some() {
+            described += 1;
+        }
+    }
+
+    (described, total)
+}
+
+/// Count columns with synonyms across all tables
+fn count_aliased_columns(model: &SemanticModel) -> (usize, usize) {
+    let mut total = 0;
+    let mut aliased = 0;
+
+    for table in &model.tables {
+        // Count dimensions
+        for dim in &table.dimensions {
+            total += 1;
+            if let Some(synonyms) = &dim.synonyms {
+                if !synonyms.is_empty() {
+                    aliased += 1;
+                }
+            }
+        }
+        // Count time dimensions
+        for time_dim in &table.time_dimensions {
+            total += 1;
+            if let Some(synonyms) = &time_dim.synonyms {
+                if !synonyms.is_empty() {
+                    aliased += 1;
+                }
+            }
+        }
+        // Count facts
+        for fact in &table.facts {
+            total += 1;
+            if let Some(synonyms) = &fact.synonyms {
+                if !synonyms.is_empty() {
+                    aliased += 1;
+                }
+            }
+        }
+        // Count metrics
+        for metric in &table.metrics {
+            total += 1;
+            if let Some(synonyms) = &metric.synonyms {
+                if !synonyms.is_empty() {
+                    aliased += 1;
+                }
+            }
+        }
+        // Count filters
+        for filter in &table.filters {
+            total += 1;
+            if let Some(synonyms) = &filter.synonyms {
+                if !synonyms.is_empty() {
+                    aliased += 1;
+                }
+            }
+        }
+    }
+
+    // Count model-level metrics
+    for metric in &model.metrics {
+        total += 1;
+        if let Some(synonyms) = &metric.synonyms {
+            if !synonyms.is_empty() {
+                aliased += 1;
+            }
+        }
+    }
+
+    (aliased, total)
+}
+
+/// Count columns with descriptions for a single table
+fn count_table_described_columns(table: &Table) -> (usize, usize) {
+    let mut total = 0;
+    let mut described = 0;
+
+    // Count dimensions
+    for dim in &table.dimensions {
+        total += 1;
+        if dim.description.is_some() {
+            described += 1;
+        }
+    }
+    // Count time dimensions
+    for time_dim in &table.time_dimensions {
+        total += 1;
+        if time_dim.description.is_some() {
+            described += 1;
+        }
+    }
+    // Count facts
+    for fact in &table.facts {
+        total += 1;
+        if fact.description.is_some() {
+            described += 1;
+        }
+    }
+    // Count metrics
+    for metric in &table.metrics {
+        total += 1;
+        if metric.description.is_some() {
+            described += 1;
+        }
+    }
+    // Count filters
+    for filter in &table.filters {
+        total += 1;
+        if filter.description.is_some() {
+            described += 1;
+        }
+    }
+
+    (described, total)
+}
+
+/// Count columns with synonyms for a single table
+fn count_table_aliased_columns(table: &Table) -> (usize, usize) {
+    let mut total = 0;
+    let mut aliased = 0;
+
+    // Count dimensions
+    for dim in &table.dimensions {
+        total += 1;
+        if let Some(synonyms) = &dim.synonyms {
+            if !synonyms.is_empty() {
+                aliased += 1;
+            }
+        }
+    }
+    // Count time dimensions
+    for time_dim in &table.time_dimensions {
+        total += 1;
+        if let Some(synonyms) = &time_dim.synonyms {
+            if !synonyms.is_empty() {
+                aliased += 1;
+            }
+        }
+    }
+    // Count facts
+    for fact in &table.facts {
+        total += 1;
+        if let Some(synonyms) = &fact.synonyms {
+            if !synonyms.is_empty() {
+                aliased += 1;
+            }
+        }
+    }
+    // Count metrics
+    for metric in &table.metrics {
+        total += 1;
+        if let Some(synonyms) = &metric.synonyms {
+            if !synonyms.is_empty() {
+                aliased += 1;
+            }
+        }
+    }
+    // Count filters
+    for filter in &table.filters {
+        total += 1;
+        if let Some(synonyms) = &filter.synonyms {
+            if !synonyms.is_empty() {
+                aliased += 1;
+            }
+        }
+    }
+
+    (aliased, total)
+}
+
 /// Format a successful validation result as a ColoredDoc
 pub fn format_success(model: &SemanticModel) -> ColoredDoc {
     let mut doc = heading("SEMANTIC MODEL VALIDATION SUMMARY", Color::Blue)
@@ -402,8 +620,24 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
     let mut facts_col = Column::new_aligned("Facts", Alignment::Right);
     let mut metrics_col = Column::new_aligned("Metrics", Alignment::Right);
     let mut filters_col = Column::new_aligned("Filters", Alignment::Right);
+    let mut described_col = Column::new_aligned("Described", Alignment::Right);
+    let mut aliased_col = Column::new_aligned("Aliased", Alignment::Right);
 
     for table_item in &model.tables {
+        let (described_count, total_count) = count_table_described_columns(table_item);
+        let (aliased_count, _) = count_table_aliased_columns(table_item);
+        
+        let described_pct = if total_count > 0 {
+            (described_count as f64 / total_count as f64) * 100.0
+        } else {
+            0.0
+        };
+        let aliased_pct = if total_count > 0 {
+            (aliased_count as f64 / total_count as f64) * 100.0
+        } else {
+            0.0
+        };
+
         name_col = name_col.add_cell(Cell::text(&table_item.name));
         location_col = location_col.add_cell(Cell::text(format!(
             "{}.{}.{}",
@@ -416,6 +650,8 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
         facts_col = facts_col.add_cell(Cell::text(table_item.facts.len().to_string()));
         metrics_col = metrics_col.add_cell(Cell::text(table_item.metrics.len().to_string()));
         filters_col = filters_col.add_cell(Cell::text(table_item.filters.len().to_string()));
+        described_col = described_col.add_cell(Cell::text(format!("{:.0}%", described_pct)));
+        aliased_col = aliased_col.add_cell(Cell::text(format!("{:.0}%", aliased_pct)));
     }
 
     let table_renderer = TableRenderer::new()
@@ -425,7 +661,9 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
         .add_column(time_col)
         .add_column(facts_col)
         .add_column(metrics_col)
-        .add_column(filters_col);
+        .add_column(filters_col)
+        .add_column(described_col)
+        .add_column(aliased_col);
 
     doc = doc
         .append(table_renderer.render())
@@ -613,6 +851,75 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
         }
     }
     doc = doc.append(ColoredDoc::line());
+
+    // Data Quality Metrics section
+    let (described_count, total_columns) = count_described_columns(model);
+    let (aliased_count, _) = count_aliased_columns(model);
+    let described_pct = if total_columns > 0 {
+        (described_count as f64 / total_columns as f64) * 100.0
+    } else {
+        0.0
+    };
+    let aliased_pct = if total_columns > 0 {
+        (aliased_count as f64 / total_columns as f64) * 100.0
+    } else {
+        0.0
+    };
+
+    doc = doc.append(subheading("DATA QUALITY METRICS", Color::Yellow));
+
+    // Determine color based on percentage
+    let described_color = if described_pct >= 80.0 {
+        Color::Green
+    } else if described_pct >= 50.0 {
+        Color::Yellow
+    } else {
+        Color::Red
+    };
+
+    let aliased_color = if aliased_pct >= 60.0 {
+        Color::Green
+    } else if aliased_pct >= 30.0 {
+        Color::Yellow
+    } else {
+        Color::Red
+    };
+
+    doc = doc
+        .append(ColoredDoc::colored_text(
+            "  Described Columns:",
+            color_spec(Color::Cyan, true),
+        ))
+        .append(ColoredDoc::text(format!(" {} / {} ", described_count, total_columns)))
+        .append(ColoredDoc::colored_text(
+            format!("({:.1}%)", described_pct),
+            color_spec(described_color, true),
+        ))
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::colored_text(
+            "  Aliased Columns:",
+            color_spec(Color::Cyan, true),
+        ))
+        .append(ColoredDoc::text(format!(" {} / {} ", aliased_count, total_columns)))
+        .append(ColoredDoc::colored_text(
+            format!("({:.1}%)", aliased_pct),
+            color_spec(aliased_color, true),
+        ))
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::colored_text(
+            "  TIP:",
+            color_spec(Color::Magenta, true),
+        ))
+        .append(ColoredDoc::text(" Descriptions and synonyms help LLMs understand your data model better."))
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::colored_text(
+            "       ",
+            color_spec(Color::Magenta, true),
+        ))
+        .append(ColoredDoc::text("Aim for 80%+ described columns and 60%+ aliased columns for optimal results."))
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::line());
 
     // Success footer
     doc.append(separator("=", Color::Blue))

@@ -7,9 +7,9 @@ Description: Test semantic model with multiple verified queries
 
 TABLES (1)
 --------------------------------------------------------------------------------
-Name  | Location                  | Dimensions | Time | Facts | Metrics | Filters
-------|---------------------------|------------|------|-------|---------|--------
-SALES | ANALYTICS_DB.PUBLIC.SALES |          2 |    1 |     2 |       0 |       0
+Name  | Location                  | Dimensions | Time | Facts | Metrics | Filters | Described | Aliased
+------|---------------------------|------------|------|-------|---------|---------|-----------|--------
+SALES | ANALYTICS_DB.PUBLIC.SALES |          2 |    1 |     2 |       0 |       0 |        0% |      0%
 
 RELATIONSHIPS (0)
 --------------------------------------------------------------------------------
@@ -27,6 +27,14 @@ top_selling_products_by_quantity | Which products have the highest sales volume 
 CUSTOM INSTRUCTIONS
 --------------------------------------------------------------------------------
   No custom instructions defined
+
+DATA QUALITY METRICS
+--------------------------------------------------------------------------------
+  Described Columns: 0 / 5 (0.0%)
+  Aliased Columns: 0 / 5 (0.0%)
+
+  TIP: Descriptions and synonyms help LLMs understand your data model better.
+       Aim for 80%+ described columns and 60%+ aliased columns for optimal results.
 
 ================================================================================
 * Validation successful!

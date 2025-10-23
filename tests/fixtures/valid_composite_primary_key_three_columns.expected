@@ -7,9 +7,9 @@ Description: Test semantic model with three-column composite primary key
 
 TABLES (1)
 --------------------------------------------------------------------------------
-Name               | Location                           | Dimensions | Time | Facts | Metrics | Filters
--------------------|------------------------------------|------------|------|-------|---------|--------
-SALES_TRANSACTIONS | SALES_DB.PUBLIC.SALES_TRANSACTIONS |          4 |    1 |     1 |       0 |       0
+Name               | Location                           | Dimensions | Time | Facts | Metrics | Filters | Described | Aliased
+-------------------|------------------------------------|------------|------|-------|---------|---------|-----------|--------
+SALES_TRANSACTIONS | SALES_DB.PUBLIC.SALES_TRANSACTIONS |          4 |    1 |     1 |       0 |       0 |      100% |      0%
 
 RELATIONSHIPS (0)
 --------------------------------------------------------------------------------
@@ -22,6 +22,14 @@ VERIFIED QUERIES (0)
 CUSTOM INSTRUCTIONS
 --------------------------------------------------------------------------------
   No custom instructions defined
+
+DATA QUALITY METRICS
+--------------------------------------------------------------------------------
+  Described Columns: 6 / 6 (100.0%)
+  Aliased Columns: 0 / 6 (0.0%)
+
+  TIP: Descriptions and synonyms help LLMs understand your data model better.
+       Aim for 80%+ described columns and 60%+ aliased columns for optimal results.
 
 ================================================================================
 * Validation successful!
