@@ -14,14 +14,15 @@ ORDERS    | SALES_DB.PUBLIC.ORDERS    |          2 |    1 |     1 |       0 |   
 
 RELATIONSHIPS
 --------------------------------------------------------------------------------
-  * customer_orders
-    left_outer ORDERS * CUSTOMERS (many_to_one)
-    Columns: CUSTOMER_ID = CUSTOMER_ID
+Name            | Join Type  | Left Table | Right Table | Type        | Columns                  
+----------------|------------|------------|-------------|-------------|--------------------------
+customer_orders | left_outer | ORDERS     | CUSTOMERS   | many_to_one | CUSTOMER_ID = CUSTOMER_ID
 
 VERIFIED QUERIES
 --------------------------------------------------------------------------------
-  * top_customers
-    Question: Who are the top 10 customers by order amount?
+Name          | Question                                     
+--------------|----------------------------------------------
+top_customers | Who are the top 10 customers by order amount?
 
 CUSTOM INSTRUCTIONS
 --------------------------------------------------------------------------------

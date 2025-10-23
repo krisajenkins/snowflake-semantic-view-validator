@@ -442,6 +442,13 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
             ))
             .append(ColoredDoc::line());
     } else {
+        let mut name_col = Column::new("Name");
+        let mut join_col = Column::new("Join Type");
+        let mut left_col = Column::new("Left Table");
+        let mut right_col = Column::new("Right Table");
+        let mut type_col = Column::new("Type");
+        let mut columns_col = Column::new("Columns");
+
         for rel in &model.relationships {
             let columns_str = rel
                 .relationship_columns
@@ -449,29 +456,24 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
                 .map(|c| format!("{} = {}", c.left_column, c.right_column))
                 .collect::<Vec<_>>()
                 .join(", ");
-            doc = doc
-                .append(ColoredDoc::text("  "))
-                .append(ColoredDoc::colored_text("*", color_spec(Color::Cyan, true)))
-                .append(ColoredDoc::text(" "))
-                .append(ColoredDoc::colored_text(
-                    &rel.name,
-                    color_spec(Color::White, true),
-                ))
-                .append(ColoredDoc::line())
-                .append(ColoredDoc::colored_text(
-                    format!(
-                        "    {} {} * {} ({})",
-                        rel.join_type, rel.left_table, rel.right_table, rel.relationship_type
-                    ),
-                    dimmed_spec(),
-                ))
-                .append(ColoredDoc::line())
-                .append(ColoredDoc::colored_text(
-                    format!("    Columns: {}", columns_str),
-                    dimmed_spec(),
-                ))
-                .append(ColoredDoc::line());
+
+            name_col = name_col.add_cell(Cell::text(&rel.name));
+            join_col = join_col.add_cell(Cell::text(&rel.join_type));
+            left_col = left_col.add_cell(Cell::text(&rel.left_table));
+            right_col = right_col.add_cell(Cell::text(&rel.right_table));
+            type_col = type_col.add_cell(Cell::text(&rel.relationship_type));
+            columns_col = columns_col.add_cell(Cell::text(columns_str));
         }
+
+        let relationships_table = TableRenderer::new()
+            .add_column(name_col)
+            .add_column(join_col)
+            .add_column(left_col)
+            .add_column(right_col)
+            .add_column(type_col)
+            .add_column(columns_col);
+
+        doc = doc.append(relationships_table.render());
     }
     doc = doc.append(ColoredDoc::line());
 
@@ -486,22 +488,19 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
             ))
             .append(ColoredDoc::line());
     } else {
+        let mut name_col = Column::new("Name");
+        let mut question_col = Column::new("Question");
+
         for query in &model.verified_queries {
-            doc = doc
-                .append(ColoredDoc::text("  "))
-                .append(ColoredDoc::colored_text("*", color_spec(Color::Cyan, true)))
-                .append(ColoredDoc::text(" "))
-                .append(ColoredDoc::colored_text(
-                    &query.name,
-                    color_spec(Color::White, true),
-                ))
-                .append(ColoredDoc::line())
-                .append(ColoredDoc::colored_text(
-                    format!("    Question: {}", query.question),
-                    dimmed_spec(),
-                ))
-                .append(ColoredDoc::line());
+            name_col = name_col.add_cell(Cell::text(&query.name));
+            question_col = question_col.add_cell(Cell::text(&query.question));
         }
+
+        let queries_table = TableRenderer::new()
+            .add_column(name_col)
+            .add_column(question_col);
+
+        doc = doc.append(queries_table.render());
     }
     doc = doc.append(ColoredDoc::line());
 
