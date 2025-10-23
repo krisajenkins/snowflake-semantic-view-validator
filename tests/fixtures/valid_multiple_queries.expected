@@ -1,0 +1,33 @@
+================================================================================
+  SEMANTIC MODEL VALIDATION SUMMARY
+================================================================================
+
+Name: MULTIPLE_QUERIES
+Description: Test semantic model with multiple verified queries
+
+TABLES
+--------------------------------------------------------------------------------
+Name  | Location                  | Dimensions | Time | Facts | Metrics | Filters
+------|---------------------------|------------|------|-------|---------|--------
+SALES | ANALYTICS_DB.PUBLIC.SALES |          2 |    1 |     2 |       0 |       0
+
+RELATIONSHIPS
+--------------------------------------------------------------------------------
+  No relationships defined
+
+VERIFIED QUERIES
+--------------------------------------------------------------------------------
+Name                             | Question                                                                                  
+---------------------------------|-------------------------------------------------------------------------------------------
+top_products_by_revenue          | What are the top 10 products by total revenue?                                            
+monthly_revenue_trend            | Show me the monthly revenue trend for the last 12 months                                  
+revenue_by_region                | What is the total revenue broken down by region?                                          
+top_selling_products_by_quantity | Which products have the highest sales volume in terms of quantity sold across all regions?
+
+CUSTOM INSTRUCTIONS
+--------------------------------------------------------------------------------
+  No custom instructions defined
+
+================================================================================
+* Validation successful!
+================================================================================

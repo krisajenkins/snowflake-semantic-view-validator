@@ -1,0 +1,35 @@
+================================================================================
+  SEMANTIC MODEL VALIDATION SUMMARY
+================================================================================
+
+Name: MULTIPLE_RELATIONSHIPS
+Description: Test semantic model with multiple relationships and different join types
+
+TABLES
+--------------------------------------------------------------------------------
+Name      | Location                  | Dimensions | Time | Facts | Metrics | Filters
+----------|---------------------------|------------|------|-------|---------|--------
+CUSTOMERS | SALES_DB.PUBLIC.CUSTOMERS |          3 |    0 |     0 |       0 |       0
+ORDERS    | SALES_DB.PUBLIC.ORDERS    |          3 |    1 |     1 |       0 |       0
+PRODUCTS  | SALES_DB.PUBLIC.PRODUCTS  |          3 |    0 |     0 |       0 |       0
+REGIONS   | SALES_DB.PUBLIC.REGIONS   |          2 |    0 |     0 |       0 |       0
+
+RELATIONSHIPS
+--------------------------------------------------------------------------------
+Name                 | Join Type  | Left Table | Right Table | Type        | Columns                  
+---------------------|------------|------------|-------------|-------------|--------------------------
+orders_to_customers  | left_outer | ORDERS     | CUSTOMERS   | many_to_one | CUSTOMER_ID = CUSTOMER_ID
+orders_to_products   | inner      | ORDERS     | PRODUCTS    | many_to_one | PRODUCT_ID = PRODUCT_ID  
+customers_to_regions | left_outer | CUSTOMERS  | REGIONS     | many_to_one | REGION_ID = REGION_ID    
+
+VERIFIED QUERIES
+--------------------------------------------------------------------------------
+  No verified queries defined
+
+CUSTOM INSTRUCTIONS
+--------------------------------------------------------------------------------
+  No custom instructions defined
+
+================================================================================
+* Validation successful!
+================================================================================

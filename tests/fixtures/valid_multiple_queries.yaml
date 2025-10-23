@@ -1,0 +1,41 @@
+name: MULTIPLE_QUERIES
+description: Test semantic model with multiple verified queries
+tables:
+  - name: SALES
+    base_table:
+      database: ANALYTICS_DB
+      schema: PUBLIC
+      table: SALES
+    dimensions:
+      - name: PRODUCT_NAME
+        expr: PRODUCT_NAME
+        data_type: VARCHAR
+      - name: REGION
+        expr: REGION
+        data_type: VARCHAR
+    time_dimensions:
+      - name: SALE_DATE
+        expr: SALE_DATE
+        data_type: DATE
+    facts:
+      - name: REVENUE
+        expr: REVENUE
+        data_type: FLOAT
+        aggregation: sum
+      - name: QUANTITY
+        expr: QUANTITY
+        data_type: INTEGER
+        aggregation: sum
+verified_queries:
+  - name: top_products_by_revenue
+    question: What are the top 10 products by total revenue?
+    verified_query: SELECT PRODUCT_NAME, SUM(REVENUE) as TOTAL_REVENUE FROM SALES GROUP BY PRODUCT_NAME ORDER BY TOTAL_REVENUE DESC LIMIT 10
+  - name: monthly_revenue_trend
+    question: Show me the monthly revenue trend for the last 12 months
+    verified_query: SELECT DATE_TRUNC('month', SALE_DATE) as MONTH, SUM(REVENUE) as MONTHLY_REVENUE FROM SALES WHERE SALE_DATE >= DATEADD(month, -12, CURRENT_DATE()) GROUP BY MONTH ORDER BY MONTH
+  - name: revenue_by_region
+    question: What is the total revenue broken down by region?
+    verified_query: SELECT REGION, SUM(REVENUE) as TOTAL_REVENUE FROM SALES GROUP BY REGION ORDER BY TOTAL_REVENUE DESC
+  - name: top_selling_products_by_quantity
+    question: Which products have the highest sales volume in terms of quantity sold across all regions?
+    verified_query: SELECT PRODUCT_NAME, SUM(QUANTITY) as TOTAL_QUANTITY FROM SALES GROUP BY PRODUCT_NAME ORDER BY TOTAL_QUANTITY DESC LIMIT 20

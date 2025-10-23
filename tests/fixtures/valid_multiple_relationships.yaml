@@ -1,0 +1,98 @@
+name: MULTIPLE_RELATIONSHIPS
+description: Test semantic model with multiple relationships and different join types
+tables:
+  - name: CUSTOMERS
+    base_table:
+      database: SALES_DB
+      schema: PUBLIC
+      table: CUSTOMERS
+    primary_key:
+      columns:
+        - CUSTOMER_ID
+    dimensions:
+      - name: CUSTOMER_ID
+        expr: CUSTOMER_ID
+        data_type: VARCHAR
+        unique: true
+      - name: CUSTOMER_NAME
+        expr: CUSTOMER_NAME
+        data_type: VARCHAR
+      - name: REGION_ID
+        expr: REGION_ID
+        data_type: VARCHAR
+  - name: ORDERS
+    base_table:
+      database: SALES_DB
+      schema: PUBLIC
+      table: ORDERS
+    dimensions:
+      - name: ORDER_ID
+        expr: ORDER_ID
+        data_type: VARCHAR
+      - name: CUSTOMER_ID
+        expr: CUSTOMER_ID
+        data_type: VARCHAR
+      - name: PRODUCT_ID
+        expr: PRODUCT_ID
+        data_type: VARCHAR
+    time_dimensions:
+      - name: ORDER_DATE
+        expr: ORDER_DATE
+        data_type: DATE
+    facts:
+      - name: AMOUNT
+        expr: AMOUNT
+        data_type: FLOAT
+        aggregation: sum
+  - name: PRODUCTS
+    base_table:
+      database: SALES_DB
+      schema: PUBLIC
+      table: PRODUCTS
+    dimensions:
+      - name: PRODUCT_ID
+        expr: PRODUCT_ID
+        data_type: VARCHAR
+      - name: PRODUCT_NAME
+        expr: PRODUCT_NAME
+        data_type: VARCHAR
+      - name: CATEGORY
+        expr: CATEGORY
+        data_type: VARCHAR
+  - name: REGIONS
+    base_table:
+      database: SALES_DB
+      schema: PUBLIC
+      table: REGIONS
+    dimensions:
+      - name: REGION_ID
+        expr: REGION_ID
+        data_type: VARCHAR
+      - name: REGION_NAME
+        expr: REGION_NAME
+        data_type: VARCHAR
+relationships:
+  - name: orders_to_customers
+    left_table: ORDERS
+    right_table: CUSTOMERS
+    relationship_columns:
+      - left_column: CUSTOMER_ID
+        right_column: CUSTOMER_ID
+    join_type: left_outer
+    relationship_type: many_to_one
+  - name: orders_to_products
+    left_table: ORDERS
+    right_table: PRODUCTS
+    relationship_columns:
+      - left_column: PRODUCT_ID
+        right_column: PRODUCT_ID
+    join_type: inner
+    relationship_type: many_to_one
+  - name: customers_to_regions
+    left_table: CUSTOMERS
+    right_table: REGIONS
+    relationship_columns:
+      - left_column: REGION_ID
+        right_column: REGION_ID
+    join_type: left_outer
+    relationship_type: many_to_one

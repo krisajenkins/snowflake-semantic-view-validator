@@ -125,3 +125,18 @@ fn test_valid_composite_primary_key() {
 fn test_valid_composite_primary_key_three_columns() {
     run_valid_test_case("valid_composite_primary_key_three_columns");
 }
+
+#[test]
+fn test_valid_multiple_relationships() {
+    run_valid_test_case("valid_multiple_relationships");
+}
+
+#[test]
+fn test_valid_multiple_queries() {
+    run_valid_test_case("valid_multiple_queries");
+}
+
+#[test]
+fn test_valid_composite_join_keys() {
+    run_valid_test_case("valid_composite_join_keys");
+}
