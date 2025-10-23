@@ -1,0 +1,209 @@
+name: COMPLETE_EXAMPLE
+description: A comprehensive example showcasing all supported Snowflake semantic model features
+comments: This example demonstrates primary keys, synonyms, relationships, verified queries, and more
+
+tables:
+  - name: CUSTOMERS
+    description: Customer master data
+    synonyms:
+      - "clients"
+      - "customer_base"
+    base_table:
+      database: SALES_DB
+      schema: PUBLIC
+      table: CUSTOMERS
+    primary_key:
+      columns:
+        - CUSTOMER_ID
+    dimensions:
+      - name: CUSTOMER_ID
+        expr: CUSTOMER_ID
+        data_type: VARCHAR
+        unique: true
+        description: Unique identifier for each customer
+      - name: CUSTOMER_NAME
+        expr: CUSTOMER_NAME
+        data_type: VARCHAR
+        synonyms:
+          - "client name"
+          - "customer full name"
+        description: Full name of the customer
+      - name: CUSTOMER_SEGMENT
+        expr: CUSTOMER_SEGMENT
+        data_type: VARCHAR
+        synonyms:
+          - "segment"
+          - "customer type"
+        description: Customer segmentation category
+        is_enum: true
+        sample_values:
+          - "Enterprise"
+          - "SMB"
+          - "Individual"
+      - name: COUNTRY
+        expr: COUNTRY
+        data_type: VARCHAR
+        description: Customer's country
+        sample_values:
+          - "USA"
+          - "Canada"
+          - "UK"
+    time_dimensions:
+      - name: SIGNUP_DATE
+        expr: SIGNUP_DATE
+        data_type: DATE
+        synonyms:
+          - "registration date"
+          - "join date"
+        description: Date when customer signed up
+    filters:
+      - name: active_customers
+        expr: STATUS = 'ACTIVE'
+        synonyms:
+          - "active only"
+        description: Filter to show only active customers
+        comments: Excludes churned and suspended customers
+
+  - name: ORDERS
+    description: Order transaction data
+    synonyms:
+      - "purchases"
+      - "transactions"
+    base_table:
+      database: SALES_DB
+      schema: PUBLIC
+      table: ORDERS
+    primary_key:
+      columns:
+        - ORDER_ID
+    dimensions:
+      - name: ORDER_ID
+        expr: ORDER_ID
+        data_type: VARCHAR
+        unique: true
+        description: Unique identifier for each order
+      - name: CUSTOMER_ID
+        expr: CUSTOMER_ID
+        data_type: VARCHAR
+        description: Foreign key to customer table
+      - name: ORDER_STATUS
+        expr: ORDER_STATUS
+        data_type: VARCHAR
+        synonyms:
+          - "status"
+        description: Current status of the order
+        is_enum: true
+        sample_values:
+          - "Pending"
+          - "Shipped"
+          - "Delivered"
+          - "Cancelled"
+    time_dimensions:
+      - name: ORDER_DATE
+        expr: ORDER_DATE
+        data_type: DATE
+        synonyms:
+          - "purchase date"
+          - "transaction date"
+        description: Date when order was placed
+      - name: SHIP_DATE
+        expr: SHIP_DATE
+        data_type: DATE
+        synonyms:
+          - "shipping date"
+        description: Date when order was shipped
+    facts:
+      - name: ORDER_AMOUNT
+        expr: ORDER_AMOUNT
+        data_type: FLOAT
+        synonyms:
+          - "order value"
+          - "purchase amount"
+        description: Total amount of the order before tax
+      - name: TAX_AMOUNT
+        expr: TAX_AMOUNT
+        data_type: FLOAT
+        description: Tax amount for the order
+        access_modifier: private_access
+      - name: DISCOUNT_AMOUNT
+        expr: DISCOUNT_AMOUNT
+        data_type: FLOAT
+        synonyms:
+          - "discount"
+        description: Discount applied to the order
+    metrics:
+      - name: total_revenue
+        expr: SUM(ORDER_AMOUNT)
+        data_type: FLOAT
+        synonyms:
+          - "total sales"
+          - "revenue"
+        description: Total revenue from all orders
+      - name: average_order_value
+        expr: AVG(ORDER_AMOUNT)
+        data_type: FLOAT
+        synonyms:
+          - "AOV"
+          - "avg order value"
+        description: Average order value across all orders
+      - name: order_count
+        expr: COUNT(ORDER_ID)
+        data_type: NUMBER
+        synonyms:
+          - "number of orders"
+          - "total orders"
+        description: Total number of orders
+    filters:
+      - name: large_orders
+        expr: ORDER_AMOUNT > 1000
+        synonyms:
+          - "big orders"
+          - "high value orders"
+        description: Filter for orders over $1000
+
+relationships:
+  - name: orders_to_customers
+    left_table: ORDERS
+    right_table: CUSTOMERS
+    relationship_columns:
+      - left_column: CUSTOMER_ID
+        right_column: CUSTOMER_ID
+    join_type: left_outer
+    relationship_type: many_to_one
+
+# Model-level derived metrics
+metrics:
+  - name: revenue_per_customer
+    expr: total_revenue / COUNT(DISTINCT CUSTOMERS.CUSTOMER_ID)
+    description: Average revenue per customer
+    synonyms:
+      - "ARPU"
+      - "average revenue per user"
+
+verified_queries:
+  - name: top_customers_by_revenue
+    question: Who are the top 10 customers by total revenue?
+    verified_query: |
+      SELECT 
+        c.CUSTOMER_NAME,
+        SUM(o.ORDER_AMOUNT) as TOTAL_REVENUE
+      FROM CUSTOMERS c
+      JOIN ORDERS o ON c.CUSTOMER_ID = o.CUSTOMER_ID
+      GROUP BY c.CUSTOMER_NAME
+      ORDER BY TOTAL_REVENUE DESC
+      LIMIT 10
+  - name: monthly_revenue_trend
+    question: What is the monthly revenue trend for the last 12 months?
+    verified_query: |
+      SELECT 
+        DATE_TRUNC('month', ORDER_DATE) as MONTH,
+        SUM(ORDER_AMOUNT) as MONTHLY_REVENUE
+      FROM ORDERS
+      WHERE ORDER_DATE >= DATEADD(month, -12, CURRENT_DATE())
+      GROUP BY MONTH
+      ORDER BY MONTH
+
+custom_instructions: |
+  When analyzing revenue, always exclude cancelled orders unless explicitly requested.
+  Customer segments should be capitalized consistently.
+  All monetary values are in USD.

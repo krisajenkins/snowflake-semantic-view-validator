@@ -12,23 +12,39 @@ use termcolor::Color;
 pub struct SemanticModel {
     pub name: String,
     pub description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub comments: Option<String>,
     pub tables: Vec<Table>,
     #[serde(default)]
     pub relationships: Vec<Relationship>,
     #[serde(default)]
-    pub custom_queries: Vec<CustomQuery>,
+    pub verified_queries: Vec<VerifiedQuery>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_instructions: Option<String>,
+    #[serde(default)]
+    pub metrics: Vec<Metric>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Table {
     pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub synonyms: Option<Vec<String>>,
     pub base_table: BaseTable,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub primary_key: Option<PrimaryKey>,
     #[serde(default)]
     pub dimensions: Vec<Dimension>,
     #[serde(default)]
     pub time_dimensions: Vec<TimeDimension>,
     #[serde(default)]
     pub facts: Vec<Fact>,
+    #[serde(default)]
+    pub metrics: Vec<Metric>,
+    #[serde(default)]
+    pub filters: Vec<Filter>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -39,10 +55,36 @@ pub struct BaseTable {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct PrimaryKey {
+    pub columns: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Dimension {
     pub name: String,
     pub expr: String,
     pub data_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub synonyms: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unique: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sample_values: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_enum: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cortex_search_service: Option<CortexSearchService>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct TimeDimension {
+    pub name: String,
+    pub expr: String,
+    pub data_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub synonyms: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -52,23 +94,50 @@ pub struct Dimension {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct TimeDimension {
-    pub name: String,
-    pub expr: String,
-    pub data_type: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Fact {
     pub name: String,
     pub expr: String,
     pub data_type: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub synonyms: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub unique: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sample_values: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub access_modifier: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Metric {
+    pub name: String,
+    pub expr: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub synonyms: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sample_values: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub access_modifier: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Filter {
+    pub name: String,
+    pub expr: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub synonyms: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub comments: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -76,16 +145,36 @@ pub struct Relationship {
     pub name: String,
     pub left_table: String,
     pub right_table: String,
+    pub relationship_columns: Vec<RelationshipColumn>,
     pub join_type: String,
-    pub join_condition: String,
+    pub relationship_type: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct CustomQuery {
-    pub name: String,
-    pub sql: String,
+pub struct RelationshipColumn {
+    pub left_column: String,
+    pub right_column: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct CortexSearchService {
+    pub service: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
+    pub literal_column: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub database: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub schema: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct VerifiedQuery {
+    pub name: String,
+    pub question: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub verified_query: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub verified_result: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -139,11 +228,14 @@ pub fn validate_file(path: impl AsRef<Path>) -> Result<SemanticModel, Validation
             });
         }
 
-        // Validate that each table has at least one dimension, time_dimension, or fact
-        if table.dimensions.is_empty() && table.time_dimensions.is_empty() && table.facts.is_empty() {
+        // Validate that each table has at least one dimension, time_dimension, fact, or metric
+        if table.dimensions.is_empty() 
+            && table.time_dimensions.is_empty() 
+            && table.facts.is_empty() 
+            && table.metrics.is_empty() {
             return Err(ValidationError {
                 message: format!(
-                    "Table '{}' must have at least one dimension, time_dimension, or fact",
+                    "Table '{}' must have at least one dimension, time_dimension, fact, or metric",
                     table.name
                 ),
                 is_yaml_error: false,
@@ -247,6 +339,16 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
                 dimmed_spec()
             ))
             .append(ColoredDoc::line())
+            .append(ColoredDoc::colored_text(
+                format!("    Metrics: {}", table.metrics.len()),
+                dimmed_spec()
+            ))
+            .append(ColoredDoc::line())
+            .append(ColoredDoc::colored_text(
+                format!("    Filters: {}", table.filters.len()),
+                dimmed_spec()
+            ))
+            .append(ColoredDoc::line())
             .append(ColoredDoc::line());
     }
 
@@ -263,6 +365,10 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
             .append(ColoredDoc::line());
     } else {
         for rel in &model.relationships {
+            let columns_str = rel.relationship_columns.iter()
+                .map(|c| format!("{} = {}", c.left_column, c.right_column))
+                .collect::<Vec<_>>()
+                .join(", ");
             doc = doc
                 .append(ColoredDoc::text("  "))
                 .append(ColoredDoc::colored_text("•", color_spec(Color::Cyan, true)))
@@ -270,7 +376,12 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
                 .append(ColoredDoc::colored_text(&rel.name, color_spec(Color::White, true)))
                 .append(ColoredDoc::line())
                 .append(ColoredDoc::colored_text(
-                    format!("    {} {} → {}", rel.join_type, rel.left_table, rel.right_table),
+                    format!("    {} {} → {} ({})", rel.join_type, rel.left_table, rel.right_table, rel.relationship_type),
+                    dimmed_spec()
+                ))
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::colored_text(
+                    format!("    Columns: {}", columns_str),
                     dimmed_spec()
                 ))
                 .append(ColoredDoc::line());
@@ -278,37 +389,54 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
     }
     doc = doc.append(ColoredDoc::line());
 
-    // Custom Queries section
+    // Verified Queries section
     doc = doc
-        .append(ColoredDoc::colored_text("CUSTOM QUERIES", color_spec(Color::Yellow, true)))
+        .append(ColoredDoc::colored_text("VERIFIED QUERIES", color_spec(Color::Yellow, true)))
         .append(ColoredDoc::line())
         .append(ColoredDoc::colored_text("─".repeat(80), color_spec(Color::Black, true)))
         .append(ColoredDoc::line());
 
-    if model.custom_queries.is_empty() {
+    if model.verified_queries.is_empty() {
         doc = doc
-            .append(ColoredDoc::colored_text("  No custom queries defined", dimmed_spec()))
+            .append(ColoredDoc::colored_text("  No verified queries defined", dimmed_spec()))
             .append(ColoredDoc::line());
     } else {
-        for query in &model.custom_queries {
+        for query in &model.verified_queries {
             doc = doc
                 .append(ColoredDoc::text("  "))
                 .append(ColoredDoc::colored_text("•", color_spec(Color::Cyan, true)))
                 .append(ColoredDoc::text(" "))
                 .append(ColoredDoc::colored_text(&query.name, color_spec(Color::White, true)))
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::colored_text(
+                    format!("    Question: {}", query.question),
+                    dimmed_spec()
+                ))
                 .append(ColoredDoc::line());
-            
-            if let Some(desc) = &query.description {
-                doc = doc
-                    .append(ColoredDoc::colored_text(format!("    {}", desc), dimmed_spec()))
-                    .append(ColoredDoc::line());
-            }
         }
     }
+    doc = doc.append(ColoredDoc::line());
+
+    // Custom Instructions section
+    doc = doc
+        .append(ColoredDoc::colored_text("CUSTOM INSTRUCTIONS", color_spec(Color::Yellow, true)))
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::colored_text("─".repeat(80), color_spec(Color::Black, true)))
+        .append(ColoredDoc::line());
+
+    if let Some(instructions) = &model.custom_instructions {
+        doc = doc
+            .append(ColoredDoc::colored_text(format!("  {}", instructions), dimmed_spec()))
+            .append(ColoredDoc::line());
+    } else {
+        doc = doc
+            .append(ColoredDoc::colored_text("  No custom instructions defined", dimmed_spec()))
+            .append(ColoredDoc::line());
+    }
+    doc = doc.append(ColoredDoc::line());
 
     // Success footer
-    doc.append(ColoredDoc::line())
-        .append(ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Blue, true)))
+    doc.append(ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Blue, true)))
         .append(ColoredDoc::line())
         .append(ColoredDoc::colored_text("✓", color_spec(Color::Green, true)))
         .append(ColoredDoc::text(" "))

@@ -6,6 +6,9 @@ tables:
       database: SALES_DB
       schema: PUBLIC
       table: CUSTOMERS
+    primary_key:
+      columns:
+        - CUSTOMER_ID
     dimensions:
       - name: CUSTOMER_ID
         expr: CUSTOMER_ID
@@ -37,11 +40,14 @@ tables:
         aggregation: sum
 relationships:
   - name: customer_orders
-    left_table: CUSTOMERS
-    right_table: ORDERS
-    join_type: LEFT
-    join_condition: CUSTOMERS.CUSTOMER_ID = ORDERS.CUSTOMER_ID
-custom_queries:
+    left_table: ORDERS
+    right_table: CUSTOMERS
+    relationship_columns:
+      - left_column: CUSTOMER_ID
+        right_column: CUSTOMER_ID
+    join_type: left_outer
+    relationship_type: many_to_one
+verified_queries:
   - name: top_customers
-    description: Find the top 10 customers by order amount
-    sql: SELECT CUSTOMER_NAME, SUM(AMOUNT) as TOTAL FROM CUSTOMERS JOIN ORDERS USING (CUSTOMER_ID) GROUP BY CUSTOMER_NAME ORDER BY TOTAL DESC LIMIT 10
+    question: Who are the top 10 customers by order amount?
+    verified_query: SELECT CUSTOMER_NAME, SUM(AMOUNT) as TOTAL FROM CUSTOMERS JOIN ORDERS USING (CUSTOMER_ID) GROUP BY CUSTOMER_NAME ORDER BY TOTAL DESC LIMIT 10

@@ -12,20 +12,28 @@ TABLES
     Dimensions: 16
     Time Dimensions: 2
     Facts: 0
+    Metrics: 0
+    Filters: 0
 
   • LEADERBOARDS
     Location: KJ_SPEEDRUN.PUBLIC.LEADERBOARDS
     Dimensions: 10
     Time Dimensions: 2
     Facts: 4
+    Metrics: 0
+    Filters: 0
 
 RELATIONSHIPS
 ────────────────────────────────────────────────────────────────────────────────
   No relationships defined
 
-CUSTOM QUERIES
+VERIFIED QUERIES
 ────────────────────────────────────────────────────────────────────────────────
-  No custom queries defined
+  No verified queries defined
+
+CUSTOM INSTRUCTIONS
+────────────────────────────────────────────────────────────────────────────────
+  No custom instructions defined
 
 ════════════════════════════════════════════════════════════════════════════════
 ✓ Validation successful!

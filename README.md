@@ -89,9 +89,9 @@ RELATIONSHIPS
 ────────────────────────────────────────────────────────────────────────────────
   No relationships defined
 
-CUSTOM QUERIES
+VERIFIED QUERIES
 ────────────────────────────────────────────────────────────────────────────────
-  No custom queries defined
+  No verified queries defined
 
 ════════════════════════════════════════════════════════════════════════════════
 ✓ Validation successful!
@@ -122,7 +122,7 @@ TIP:
 
 ## Semantic Model Specification
 
-The tool validates semantic models according to the Snowflake specification. A valid semantic model must include:
+The tool validates semantic models according to the [official Snowflake specification](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-analyst/semantic-model-spec). A valid semantic model must include:
 
 ### Required Fields
 
@@ -140,11 +140,55 @@ Each table must have:
   - `dimensions`: Column definitions for dimensional data
   - `time_dimensions`: Column definitions for time-based data
   - `facts`: Column definitions for measurable/aggregatable data
+  - `metrics`: Column definitions for aggregate metrics
 
 ### Optional Fields
 
-- `relationships`: Defines how tables relate to each other
-- `custom_queries`: Pre-defined SQL queries for common analysis patterns
+#### Model Level
+- `comments`: Additional comments about the model
+- `relationships`: Defines how tables relate to each other via foreign keys
+- `verified_queries`: Pre-defined questions and verified SQL queries (Verified Query Repository)
+- `custom_instructions`: Custom instructions for Cortex Analyst
+- `metrics`: Model-scoped derived metrics
+
+#### Table Level
+- `description`: Description of the table
+- `synonyms`: Alternative names for the table
+- `primary_key`: Primary key columns (required if table is used in relationships)
+- `filters`: Predefined filters for the table
+
+#### Column Level (Dimensions, Time Dimensions, Facts, Metrics, Filters)
+- `synonyms`: Alternative names/phrases for the column
+- `description`: Description of what the column represents
+- `unique`: Boolean indicating if values are unique
+- `sample_values`: Example values
+- `access_modifier`: For facts and metrics - `public_access` or `private_access`
+- `is_enum`: For dimensions - indicates if sample_values is exhaustive
+- `cortex_search_service`: For dimensions - Cortex Search Service configuration
+
+### Relationships
+
+Relationships define joins between tables and must include:
+- `name`: Unique identifier for the relationship
+- `left_table`: Source table name
+- `right_table`: Target table name
+- `relationship_columns`: Array of column pairs to join on
+  - `left_column`: Column name in left table
+  - `right_column`: Column name in right table
+- `join_type`: Either `left_outer` or `inner`
+- `relationship_type`: Either `many_to_one` or `one_to_one`
+
+### Spec Compliance
+
+This validator is compliant with the official Snowflake Cortex Analyst semantic model specification as of October 2025. It supports all required and optional fields defined in the spec, including:
+
+✅ Primary keys for relationship definitions  
+✅ Synonyms for all entity types  
+✅ Access modifiers for facts and metrics  
+✅ Model-level derived metrics  
+✅ Verified Query Repository (VQR)  
+✅ Cortex Search Service integration  
+✅ Complete relationship structure with column mappings
 
 ## Development
 
@@ -171,7 +215,7 @@ To regenerate expected outputs after making changes:
 ```bash
 cargo build --release
 ./target/release/ssvv tests/fixtures/valid_basic.yaml > tests/fixtures/valid_basic.expected
-# Repeat for other test cases...
+./target/release/ssvv tests/fixtures/valid_with_relationships.yaml > tests/fixtures/valid_with_relationships.expected
 ```
 
 ### Project Structure

@@ -12,22 +12,31 @@ TABLES
     Dimensions: 2
     Time Dimensions: 0
     Facts: 0
+    Metrics: 0
+    Filters: 0
 
   • ORDERS
     Location: SALES_DB.PUBLIC.ORDERS
     Dimensions: 2
     Time Dimensions: 1
     Facts: 1
+    Metrics: 0
+    Filters: 0
 
 RELATIONSHIPS
 ────────────────────────────────────────────────────────────────────────────────
   • customer_orders
-    LEFT CUSTOMERS → ORDERS
+    left_outer ORDERS → CUSTOMERS (many_to_one)
+    Columns: CUSTOMER_ID = CUSTOMER_ID
 
-CUSTOM QUERIES
+VERIFIED QUERIES
 ────────────────────────────────────────────────────────────────────────────────
   • top_customers
-    Find the top 10 customers by order amount
+    Question: Who are the top 10 customers by order amount?
+
+CUSTOM INSTRUCTIONS
+────────────────────────────────────────────────────────────────────────────────
+  No custom instructions defined
 
 ════════════════════════════════════════════════════════════════════════════════
 ✓ Validation successful!
