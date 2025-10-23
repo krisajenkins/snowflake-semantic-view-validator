@@ -14,7 +14,7 @@
             overlays = [ ];
           };
         in
-        {
+        rec {
           packages = rec {
             ssvv = pkgs.rustPlatform.buildRustPackage {
               pname = "ssvv";
@@ -38,6 +38,7 @@
 
           apps.default = {
             type = "app";
+            meta = packages.ssvv.meta;
             program = "${self.packages.${system}.ssvv}/bin/ssvv";
           };
 
