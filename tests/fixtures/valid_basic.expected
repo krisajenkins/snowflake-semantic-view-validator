@@ -5,18 +5,18 @@
 Name: SPEEDRUN
 Description: This semantic model describes the Speedrun dataset from Kaggle, based on Speedrun.com. Many gamers who have competed to be the fastest to complete specific video games.
 
-TABLES
+TABLES (2)
 --------------------------------------------------------------------------------
 Name         | Location                        | Dimensions | Time | Facts | Metrics | Filters
 -------------|---------------------------------|------------|------|-------|---------|--------
 GAMES        | KJ_SPEEDRUN.PUBLIC.GAMES        |         16 |    2 |     0 |       0 |       0
 LEADERBOARDS | KJ_SPEEDRUN.PUBLIC.LEADERBOARDS |         10 |    2 |     4 |       0 |       0
 
-RELATIONSHIPS
+RELATIONSHIPS (0)
 --------------------------------------------------------------------------------
   No relationships defined
 
-VERIFIED QUERIES
+VERIFIED QUERIES (0)
 --------------------------------------------------------------------------------
   No verified queries defined
 

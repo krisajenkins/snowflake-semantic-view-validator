@@ -5,20 +5,20 @@
 Name: COMPOSITE_JOIN_KEYS
 Description: Test semantic model with composite join keys in relationships
 
-TABLES
+TABLES (2)
 --------------------------------------------------------------------------------
 Name        | Location                    | Dimensions | Time | Facts | Metrics | Filters
 ------------|-----------------------------|------------|------|-------|---------|--------
 ORDER_ITEMS | SALES_DB.PUBLIC.ORDER_ITEMS |          4 |    0 |     1 |       0 |       0
 INVENTORY   | SALES_DB.PUBLIC.INVENTORY   |          3 |    0 |     1 |       0 |       0
 
-RELATIONSHIPS
+RELATIONSHIPS (1)
 --------------------------------------------------------------------------------
 Name                     | Join Type  | Left Table  | Right Table | Type        | Columns                                             
 -------------------------|------------|-------------|-------------|-------------|-----------------------------------------------------
 order_items_to_inventory | left_outer | ORDER_ITEMS | INVENTORY   | many_to_one | PRODUCT_ID = PRODUCT_ID, WAREHOUSE_ID = WAREHOUSE_ID
 
-VERIFIED QUERIES
+VERIFIED QUERIES (0)
 --------------------------------------------------------------------------------
   No verified queries defined
 

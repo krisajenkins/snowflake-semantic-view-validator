@@ -5,20 +5,20 @@
 Name: WITH_RELATIONSHIPS
 Description: This semantic model includes relationships and custom queries
 
-TABLES
+TABLES (2)
 --------------------------------------------------------------------------------
 Name      | Location                  | Dimensions | Time | Facts | Metrics | Filters
 ----------|---------------------------|------------|------|-------|---------|--------
 CUSTOMERS | SALES_DB.PUBLIC.CUSTOMERS |          2 |    0 |     0 |       0 |       0
 ORDERS    | SALES_DB.PUBLIC.ORDERS    |          2 |    1 |     1 |       0 |       0
 
-RELATIONSHIPS
+RELATIONSHIPS (1)
 --------------------------------------------------------------------------------
 Name            | Join Type  | Left Table | Right Table | Type        | Columns                  
 ----------------|------------|------------|-------------|-------------|--------------------------
 customer_orders | left_outer | ORDERS     | CUSTOMERS   | many_to_one | CUSTOMER_ID = CUSTOMER_ID
 
-VERIFIED QUERIES
+VERIFIED QUERIES (1)
 --------------------------------------------------------------------------------
 Name          | Question                                     
 --------------|----------------------------------------------

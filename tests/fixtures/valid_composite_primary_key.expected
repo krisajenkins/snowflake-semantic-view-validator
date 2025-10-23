@@ -5,17 +5,17 @@
 Name: COMPOSITE_PRIMARY_KEY_TEST
 Description: Test semantic model with composite primary keys
 
-TABLES
+TABLES (1)
 --------------------------------------------------------------------------------
 Name        | Location                    | Dimensions | Time | Facts | Metrics | Filters
 ------------|-----------------------------|------------|------|-------|---------|--------
 ORDER_ITEMS | SALES_DB.PUBLIC.ORDER_ITEMS |          3 |    0 |     2 |       0 |       0
 
-RELATIONSHIPS
+RELATIONSHIPS (0)
 --------------------------------------------------------------------------------
   No relationships defined
 
-VERIFIED QUERIES
+VERIFIED QUERIES (0)
 --------------------------------------------------------------------------------
   No verified queries defined
 

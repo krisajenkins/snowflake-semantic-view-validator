@@ -5,17 +5,17 @@
 Name: MULTIPLE_QUERIES
 Description: Test semantic model with multiple verified queries
 
-TABLES
+TABLES (1)
 --------------------------------------------------------------------------------
 Name  | Location                  | Dimensions | Time | Facts | Metrics | Filters
 ------|---------------------------|------------|------|-------|---------|--------
 SALES | ANALYTICS_DB.PUBLIC.SALES |          2 |    1 |     2 |       0 |       0
 
-RELATIONSHIPS
+RELATIONSHIPS (0)
 --------------------------------------------------------------------------------
   No relationships defined
 
-VERIFIED QUERIES
+VERIFIED QUERIES (4)
 --------------------------------------------------------------------------------
 Name                             | Question                                                                                  
 ---------------------------------|-------------------------------------------------------------------------------------------

@@ -392,7 +392,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
         .append(ColoredDoc::text(format!(" {}", model.description)))
         .append(ColoredDoc::line())
         .append(ColoredDoc::line())
-        .append(subheading("TABLES", Color::Yellow));
+        .append(subheading(&format!("TABLES ({})", model.tables.len()), Color::Yellow));
 
     // Build table for tables section - column by column
     let mut name_col = Column::new("Name");
@@ -432,7 +432,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
         .append(ColoredDoc::line());
 
     // Relationships section
-    doc = doc.append(subheading("RELATIONSHIPS", Color::Yellow));
+    doc = doc.append(subheading(&format!("RELATIONSHIPS ({})", model.relationships.len()), Color::Yellow));
 
     if model.relationships.is_empty() {
         doc = doc
@@ -478,7 +478,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
     doc = doc.append(ColoredDoc::line());
 
     // Verified Queries section
-    doc = doc.append(subheading("VERIFIED QUERIES", Color::Yellow));
+    doc = doc.append(subheading(&format!("VERIFIED QUERIES ({})", model.verified_queries.len()), Color::Yellow));
 
     if model.verified_queries.is_empty() {
         doc = doc
