@@ -33,7 +33,8 @@ fn run_valid_test_case(fixture_name: &str) {
     );
 
     let model = result.unwrap();
-    let actual = format_success(&model);
+    let doc = format_success(&model);
+    let actual = doc.render_plain();
     
     let expected = fs::read_to_string(&expected_path)
         .expect(&format!("Failed to read expected output file: {:?}", expected_path));
@@ -60,7 +61,8 @@ fn run_invalid_test_case(fixture_name: &str) {
     );
 
     let error = result.unwrap_err();
-    let actual = format_error(&error);
+    let doc = format_error(&error);
+    let actual = doc.render_plain();
     
     let expected = fs::read_to_string(&expected_path)
         .expect(&format!("Failed to read expected output file: {:?}", expected_path));

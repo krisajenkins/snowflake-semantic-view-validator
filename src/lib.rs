@@ -1,7 +1,12 @@
+mod colored_doc;
+
+pub use colored_doc::{ColoredDoc, color_spec, dimmed_spec};
+
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fs;
 use std::path::Path;
+use termcolor::Color;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SemanticModel {
@@ -149,103 +154,165 @@ pub fn validate_file(path: impl AsRef<Path>) -> Result<SemanticModel, Validation
     Ok(model)
 }
 
-/// Format a validation error as a string
-pub fn format_error(error: &ValidationError) -> String {
-    let mut output = String::new();
-    
-    output.push_str(&"═".repeat(80));
-    output.push('\n');
-    output.push_str("  VALIDATION ERROR\n");
-    output.push_str(&"═".repeat(80));
-    output.push_str("\n\n");
-    output.push_str(&format!("✗ {}\n", error.message));
-    output.push('\n');
-    
-    if error.is_yaml_error {
-        output.push_str("TIP:\n");
-        output.push_str("  Check the YAML syntax at the indicated line and column.\n");
-        output.push_str("  Common issues include:\n");
-        output.push_str("    • Incorrect indentation (use spaces, not tabs)\n");
-        output.push_str("    • Missing colons after keys\n");
-        output.push_str("    • Unquoted strings containing special characters\n");
-        output.push_str("    • Missing required fields\n");
-        output.push('\n');
-    }
-    
-    output.push_str(&"═".repeat(80));
-    
-    output
+/// Format a validation error as a ColoredDoc
+pub fn format_error(error: &ValidationError) -> ColoredDoc {
+    ColoredDoc::concat(vec![
+        ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Red, true)),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text("  VALIDATION ERROR", color_spec(Color::Red, true)),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Red, true)),
+        ColoredDoc::line(),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text(format!("✗ {}", error.message), color_spec(Color::Red, true)),
+        ColoredDoc::line(),
+        ColoredDoc::line(),
+    ])
+    .append(if error.is_yaml_error {
+        ColoredDoc::concat(vec![
+            ColoredDoc::colored_text("TIP:", color_spec(Color::Yellow, true)),
+            ColoredDoc::line(),
+            ColoredDoc::text("  Check the YAML syntax at the indicated line and column."),
+            ColoredDoc::line(),
+            ColoredDoc::text("  Common issues include:"),
+            ColoredDoc::line(),
+            ColoredDoc::text("    • Incorrect indentation (use spaces, not tabs)"),
+            ColoredDoc::line(),
+            ColoredDoc::text("    • Missing colons after keys"),
+            ColoredDoc::line(),
+            ColoredDoc::text("    • Unquoted strings containing special characters"),
+            ColoredDoc::line(),
+            ColoredDoc::text("    • Missing required fields"),
+            ColoredDoc::line(),
+            ColoredDoc::line(),
+        ])
+    } else {
+        ColoredDoc::text("")
+    })
+    .append(ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Red, true)))
 }
 
-/// Format a successful validation result as a string
-pub fn format_success(model: &SemanticModel) -> String {
-    let mut output = String::new();
-    
-    output.push_str(&"═".repeat(80));
-    output.push('\n');
-    output.push_str("  SEMANTIC MODEL VALIDATION SUMMARY\n");
-    output.push_str(&"═".repeat(80));
-    output.push_str("\n\n");
+/// Format a successful validation result as a ColoredDoc
+pub fn format_success(model: &SemanticModel) -> ColoredDoc {
+    let mut doc = ColoredDoc::concat(vec![
+        ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Blue, true)),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text("  SEMANTIC MODEL VALIDATION SUMMARY", color_spec(Color::Blue, true)),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Blue, true)),
+        ColoredDoc::line(),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text("Name:", color_spec(Color::Green, true)),
+        ColoredDoc::text(format!(" {}", model.name)),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text("Description:", color_spec(Color::Green, true)),
+        ColoredDoc::text(format!(" {}", model.description)),
+        ColoredDoc::line(),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text("TABLES", color_spec(Color::Yellow, true)),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text("─".repeat(80), color_spec(Color::Black, true)),
+        ColoredDoc::line(),
+    ]);
 
-    output.push_str(&format!("Name: {}\n", model.name));
-    output.push_str(&format!("Description: {}\n", model.description));
-    output.push_str("\n");
-
-    output.push_str("TABLES\n");
-    output.push_str(&"─".repeat(80));
-    output.push('\n');
-    
+    // Add tables
     for table in &model.tables {
-        output.push_str(&format!("  • {}\n", table.name));
-        output.push_str(&format!(
-            "    Location: {}.{}.{}\n",
-            table.base_table.database,
-            table.base_table.schema,
-            table.base_table.table
-        ));
-        output.push_str(&format!("    Dimensions: {}\n", table.dimensions.len()));
-        output.push_str(&format!("    Time Dimensions: {}\n", table.time_dimensions.len()));
-        output.push_str(&format!("    Facts: {}\n", table.facts.len()));
-        output.push('\n');
+        doc = doc
+            .append(ColoredDoc::text("  "))
+            .append(ColoredDoc::colored_text("•", color_spec(Color::Cyan, true)))
+            .append(ColoredDoc::text(" "))
+            .append(ColoredDoc::colored_text(&table.name, color_spec(Color::White, true)))
+            .append(ColoredDoc::line())
+            .append(ColoredDoc::colored_text(
+                format!("    Location: {}.{}.{}", 
+                    table.base_table.database,
+                    table.base_table.schema,
+                    table.base_table.table
+                ),
+                dimmed_spec()
+            ))
+            .append(ColoredDoc::line())
+            .append(ColoredDoc::colored_text(
+                format!("    Dimensions: {}", table.dimensions.len()),
+                dimmed_spec()
+            ))
+            .append(ColoredDoc::line())
+            .append(ColoredDoc::colored_text(
+                format!("    Time Dimensions: {}", table.time_dimensions.len()),
+                dimmed_spec()
+            ))
+            .append(ColoredDoc::line())
+            .append(ColoredDoc::colored_text(
+                format!("    Facts: {}", table.facts.len()),
+                dimmed_spec()
+            ))
+            .append(ColoredDoc::line())
+            .append(ColoredDoc::line());
     }
 
-    output.push_str("RELATIONSHIPS\n");
-    output.push_str(&"─".repeat(80));
-    output.push('\n');
+    // Relationships section
+    doc = doc
+        .append(ColoredDoc::colored_text("RELATIONSHIPS", color_spec(Color::Yellow, true)))
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::colored_text("─".repeat(80), color_spec(Color::Black, true)))
+        .append(ColoredDoc::line());
+
     if model.relationships.is_empty() {
-        output.push_str("  No relationships defined\n");
+        doc = doc
+            .append(ColoredDoc::colored_text("  No relationships defined", dimmed_spec()))
+            .append(ColoredDoc::line());
     } else {
         for rel in &model.relationships {
-            output.push_str(&format!("  • {}\n", rel.name));
-            output.push_str(&format!(
-                "    {} {} → {}\n",
-                rel.join_type,
-                rel.left_table,
-                rel.right_table
-            ));
+            doc = doc
+                .append(ColoredDoc::text("  "))
+                .append(ColoredDoc::colored_text("•", color_spec(Color::Cyan, true)))
+                .append(ColoredDoc::text(" "))
+                .append(ColoredDoc::colored_text(&rel.name, color_spec(Color::White, true)))
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::colored_text(
+                    format!("    {} {} → {}", rel.join_type, rel.left_table, rel.right_table),
+                    dimmed_spec()
+                ))
+                .append(ColoredDoc::line());
         }
     }
-    output.push('\n');
+    doc = doc.append(ColoredDoc::line());
 
-    output.push_str("CUSTOM QUERIES\n");
-    output.push_str(&"─".repeat(80));
-    output.push('\n');
+    // Custom Queries section
+    doc = doc
+        .append(ColoredDoc::colored_text("CUSTOM QUERIES", color_spec(Color::Yellow, true)))
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::colored_text("─".repeat(80), color_spec(Color::Black, true)))
+        .append(ColoredDoc::line());
+
     if model.custom_queries.is_empty() {
-        output.push_str("  No custom queries defined\n");
+        doc = doc
+            .append(ColoredDoc::colored_text("  No custom queries defined", dimmed_spec()))
+            .append(ColoredDoc::line());
     } else {
         for query in &model.custom_queries {
-            output.push_str(&format!("  • {}\n", query.name));
+            doc = doc
+                .append(ColoredDoc::text("  "))
+                .append(ColoredDoc::colored_text("•", color_spec(Color::Cyan, true)))
+                .append(ColoredDoc::text(" "))
+                .append(ColoredDoc::colored_text(&query.name, color_spec(Color::White, true)))
+                .append(ColoredDoc::line());
+            
             if let Some(desc) = &query.description {
-                output.push_str(&format!("    {}\n", desc));
+                doc = doc
+                    .append(ColoredDoc::colored_text(format!("    {}", desc), dimmed_spec()))
+                    .append(ColoredDoc::line());
             }
         }
     }
-    output.push('\n');
 
-    output.push_str(&"═".repeat(80));
-    output.push('\n');
-    output.push_str("✓ Validation successful!\n");
-    output.push_str(&"═".repeat(80));
-    
-    output
+    // Success footer
+    doc.append(ColoredDoc::line())
+        .append(ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Blue, true)))
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::colored_text("✓", color_spec(Color::Green, true)))
+        .append(ColoredDoc::text(" "))
+        .append(ColoredDoc::colored_text("Validation successful!", color_spec(Color::Green, false)))
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Blue, true)))
 }
