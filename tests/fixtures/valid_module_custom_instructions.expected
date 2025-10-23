@@ -2,41 +2,37 @@
   SEMANTIC MODEL VALIDATION SUMMARY
 ================================================================================
 
-Name: WITH_RELATIONSHIPS
-Description: This semantic model includes relationships and custom queries
+Name: MODULE_INSTRUCTIONS_EXAMPLE
+Description: Example demonstrating module_custom_instructions
 
 TABLES
 --------------------------------------------------------------------------------
-  * CUSTOMERS
-    Location: SALES_DB.PUBLIC.CUSTOMERS
-    Dimensions: 2
+  * SALES
+    Location: SALES_DB.PUBLIC.SALES
+    Dimensions: 1
     Time Dimensions: 0
-    Facts: 0
-    Metrics: 0
-    Filters: 0
-
-  * ORDERS
-    Location: SALES_DB.PUBLIC.ORDERS
-    Dimensions: 2
-    Time Dimensions: 1
     Facts: 1
     Metrics: 0
     Filters: 0
 
 RELATIONSHIPS
 --------------------------------------------------------------------------------
-  * customer_orders
-    left_outer ORDERS * CUSTOMERS (many_to_one)
-    Columns: CUSTOMER_ID = CUSTOMER_ID
+  No relationships defined
 
 VERIFIED QUERIES
 --------------------------------------------------------------------------------
-  * top_customers
-    Question: Who are the top 10 customers by order amount?
+  No verified queries defined
 
 CUSTOM INSTRUCTIONS
 --------------------------------------------------------------------------------
-  No custom instructions defined
+  module_custom_instructions:
+    question_categorization:
+      - If the question asks for users without providing a product_type, consider this question UNCLEAR and ask the user to specify product_type.
+      - Reject all questions asking about salary information. Ask users to contact their admin.
+
+    sql_generation:
+      Ensure that all numeric columns are rounded to 2 decimal points in the output.
+      For any percentage or rate calculation, multiply the result by 100.
 
 ================================================================================
 * Validation successful!

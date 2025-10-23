@@ -1,0 +1,14 @@
+name: EMPTY_MODULE_INSTRUCTIONS
+description: Example with empty module_custom_instructions (should fail)
+tables:
+  - name: SALES
+    base_table:
+      database: SALES_DB
+      schema: PUBLIC
+      table: SALES
+    dimensions:
+      - name: PRODUCT_TYPE
+        expr: PRODUCT_TYPE
+        data_type: VARCHAR
+
+module_custom_instructions: {}

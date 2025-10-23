@@ -1,0 +1,20 @@
+name: LEGACY_INSTRUCTIONS_EXAMPLE
+description: Example with legacy custom_instructions (should trigger warning)
+tables:
+  - name: SALES
+    base_table:
+      database: SALES_DB
+      schema: PUBLIC
+      table: SALES
+    dimensions:
+      - name: PRODUCT_TYPE
+        expr: PRODUCT_TYPE
+        data_type: VARCHAR
+    facts:
+      - name: REVENUE
+        expr: REVENUE
+        data_type: FLOAT
+
+custom_instructions: |
+  Ensure that all numeric columns are rounded to 2 decimal points in the output.
+  For any percentage or rate calculation, multiply the result by 100.

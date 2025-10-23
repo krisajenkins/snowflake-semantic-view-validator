@@ -2,6 +2,6 @@
   VALIDATION ERROR
 ================================================================================
 
-* Semantic model must have at least one table
+* 'module_custom_instructions' must have at least one of 'question_categorization' or 'sql_generation' defined
 
 --------------------------------------------------------------------------------

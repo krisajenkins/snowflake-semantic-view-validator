@@ -21,8 +21,18 @@ pub struct SemanticModel {
     pub verified_queries: Vec<VerifiedQuery>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub custom_instructions: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub module_custom_instructions: Option<ModuleCustomInstructions>,
     #[serde(default)]
     pub metrics: Vec<Metric>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ModuleCustomInstructions {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub question_categorization: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sql_generation: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -191,8 +201,20 @@ impl fmt::Display for ValidationError {
 
 impl std::error::Error for ValidationError {}
 
+#[derive(Debug, Clone)]
+pub struct ValidationWarning {
+    pub message: String,
+    pub suggestion: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ValidationResult {
+    pub model: SemanticModel,
+    pub warnings: Vec<ValidationWarning>,
+}
+
 /// Parse and validate a semantic model file
-pub fn validate_file(path: impl AsRef<Path>) -> Result<SemanticModel, ValidationError> {
+pub fn validate_file(path: impl AsRef<Path>) -> Result<ValidationResult, ValidationError> {
     let path = path.as_ref();
 
     let contents = fs::read_to_string(path).map_err(|e| ValidationError {
@@ -244,20 +266,50 @@ pub fn validate_file(path: impl AsRef<Path>) -> Result<SemanticModel, Validation
         }
     }
 
-    Ok(model)
+    // Check for warnings
+    let mut warnings = Vec::new();
+
+    // Check if custom_instructions is used without module_custom_instructions
+    if model.custom_instructions.is_some() && model.module_custom_instructions.is_none() {
+        let custom_instructions = model.custom_instructions.as_ref().unwrap();
+        warnings.push(ValidationWarning {
+            message: "The 'custom_instructions' field is deprecated. Consider migrating to 'module_custom_instructions'.".to_string(),
+            suggestion: Some(format!(
+                "Replace:\n  custom_instructions: |\n    {}\n\nWith:\n  module_custom_instructions:\n    sql_generation: |\n      {}",
+                custom_instructions.lines().collect::<Vec<_>>().join("\n    "),
+                custom_instructions.lines().collect::<Vec<_>>().join("\n      ")
+            )),
+        });
+    }
+
+    // Validate module_custom_instructions if present
+    if let Some(ref module_instructions) = model.module_custom_instructions {
+        if module_instructions.question_categorization.is_none() 
+            && module_instructions.sql_generation.is_none() {
+            return Err(ValidationError {
+                message: "'module_custom_instructions' must have at least one of 'question_categorization' or 'sql_generation' defined".to_string(),
+                is_yaml_error: false,
+            });
+        }
+    }
+
+    Ok(ValidationResult {
+        model,
+        warnings,
+    })
 }
 
 /// Format a validation error as a ColoredDoc
 pub fn format_error(error: &ValidationError) -> ColoredDoc {
     ColoredDoc::concat(vec![
-        ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Red, true)),
+        ColoredDoc::colored_text("=".repeat(80), color_spec(Color::Red, true)),
         ColoredDoc::line(),
         ColoredDoc::colored_text("  VALIDATION ERROR", color_spec(Color::Red, true)),
         ColoredDoc::line(),
-        ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Red, true)),
+        ColoredDoc::colored_text("=".repeat(80), color_spec(Color::Red, true)),
         ColoredDoc::line(),
         ColoredDoc::line(),
-        ColoredDoc::colored_text(format!("✗ {}", error.message), color_spec(Color::Red, true)),
+        ColoredDoc::colored_text(format!("* {}", error.message), color_spec(Color::Red, true)),
         ColoredDoc::line(),
         ColoredDoc::line(),
     ])
@@ -269,13 +321,13 @@ pub fn format_error(error: &ValidationError) -> ColoredDoc {
             ColoredDoc::line(),
             ColoredDoc::text("  Common issues include:"),
             ColoredDoc::line(),
-            ColoredDoc::text("    • Incorrect indentation (use spaces, not tabs)"),
+            ColoredDoc::text("    * Incorrect indentation (use spaces, not tabs)"),
             ColoredDoc::line(),
-            ColoredDoc::text("    • Missing colons after keys"),
+            ColoredDoc::text("    * Missing colons after keys"),
             ColoredDoc::line(),
-            ColoredDoc::text("    • Unquoted strings containing special characters"),
+            ColoredDoc::text("    * Unquoted strings containing special characters"),
             ColoredDoc::line(),
-            ColoredDoc::text("    • Missing required fields"),
+            ColoredDoc::text("    * Missing required fields"),
             ColoredDoc::line(),
             ColoredDoc::line(),
         ])
@@ -283,22 +335,69 @@ pub fn format_error(error: &ValidationError) -> ColoredDoc {
         ColoredDoc::text("")
     })
     .append(ColoredDoc::colored_text(
-        "═".repeat(80),
+        "-".repeat(80),
         color_spec(Color::Red, true),
     ))
+}
+
+/// Format warnings as a ColoredDoc
+pub fn format_warnings(warnings: &[ValidationWarning]) -> ColoredDoc {
+    if warnings.is_empty() {
+        return ColoredDoc::text("");
+    }
+
+    let mut doc = ColoredDoc::concat(vec![
+        ColoredDoc::colored_text("=".repeat(80), color_spec(Color::Yellow, true)),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text(
+            "  WARNINGS",
+            color_spec(Color::Yellow, true),
+        ),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text("=".repeat(80), color_spec(Color::Yellow, true)),
+        ColoredDoc::line(),
+        ColoredDoc::line(),
+    ]);
+
+    for warning in warnings {
+        doc = doc
+            .append(ColoredDoc::colored_text("* ", color_spec(Color::Yellow, true)))
+            .append(ColoredDoc::colored_text(&warning.message, color_spec(Color::Yellow, false)))
+            .append(ColoredDoc::line());
+
+        if let Some(suggestion) = &warning.suggestion {
+            doc = doc
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::colored_text("  Suggestion:", color_spec(Color::Cyan, true)))
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::colored_text(
+                    format!("  {}", suggestion.lines().collect::<Vec<_>>().join("\n  ")),
+                    dimmed_spec(),
+                ))
+                .append(ColoredDoc::line());
+        }
+        doc = doc.append(ColoredDoc::line());
+    }
+
+    doc.append(ColoredDoc::colored_text(
+        "-".repeat(80),
+        color_spec(Color::Yellow, true),
+    ))
+    .append(ColoredDoc::line())
+    .append(ColoredDoc::line())
 }
 
 /// Format a successful validation result as a ColoredDoc
 pub fn format_success(model: &SemanticModel) -> ColoredDoc {
     let mut doc = ColoredDoc::concat(vec![
-        ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Blue, true)),
+        ColoredDoc::colored_text("=".repeat(80), color_spec(Color::Blue, true)),
         ColoredDoc::line(),
         ColoredDoc::colored_text(
             "  SEMANTIC MODEL VALIDATION SUMMARY",
             color_spec(Color::Blue, true),
         ),
         ColoredDoc::line(),
-        ColoredDoc::colored_text("═".repeat(80), color_spec(Color::Blue, true)),
+        ColoredDoc::colored_text("=".repeat(80), color_spec(Color::Blue, true)),
         ColoredDoc::line(),
         ColoredDoc::line(),
         ColoredDoc::colored_text("Name:", color_spec(Color::Green, true)),
@@ -310,7 +409,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
         ColoredDoc::line(),
         ColoredDoc::colored_text("TABLES", color_spec(Color::Yellow, true)),
         ColoredDoc::line(),
-        ColoredDoc::colored_text("─".repeat(80), color_spec(Color::Black, true)),
+        ColoredDoc::colored_text("-".repeat(80), color_spec(Color::Black, true)),
         ColoredDoc::line(),
     ]);
 
@@ -318,7 +417,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
     for table in &model.tables {
         doc = doc
             .append(ColoredDoc::text("  "))
-            .append(ColoredDoc::colored_text("•", color_spec(Color::Cyan, true)))
+            .append(ColoredDoc::colored_text("*", color_spec(Color::Cyan, true)))
             .append(ColoredDoc::text(" "))
             .append(ColoredDoc::colored_text(
                 &table.name,
@@ -369,7 +468,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
         ))
         .append(ColoredDoc::line())
         .append(ColoredDoc::colored_text(
-            "─".repeat(80),
+            "-".repeat(80),
             color_spec(Color::Black, true),
         ))
         .append(ColoredDoc::line());
@@ -391,7 +490,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
                 .join(", ");
             doc = doc
                 .append(ColoredDoc::text("  "))
-                .append(ColoredDoc::colored_text("•", color_spec(Color::Cyan, true)))
+                .append(ColoredDoc::colored_text("*", color_spec(Color::Cyan, true)))
                 .append(ColoredDoc::text(" "))
                 .append(ColoredDoc::colored_text(
                     &rel.name,
@@ -400,7 +499,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
                 .append(ColoredDoc::line())
                 .append(ColoredDoc::colored_text(
                     format!(
-                        "    {} {} → {} ({})",
+                        "    {} {} * {} ({})",
                         rel.join_type, rel.left_table, rel.right_table, rel.relationship_type
                     ),
                     dimmed_spec(),
@@ -423,7 +522,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
         ))
         .append(ColoredDoc::line())
         .append(ColoredDoc::colored_text(
-            "─".repeat(80),
+            "-".repeat(80),
             color_spec(Color::Black, true),
         ))
         .append(ColoredDoc::line());
@@ -439,7 +538,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
         for query in &model.verified_queries {
             doc = doc
                 .append(ColoredDoc::text("  "))
-                .append(ColoredDoc::colored_text("•", color_spec(Color::Cyan, true)))
+                .append(ColoredDoc::colored_text("*", color_spec(Color::Cyan, true)))
                 .append(ColoredDoc::text(" "))
                 .append(ColoredDoc::colored_text(
                     &query.name,
@@ -463,36 +562,114 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
         ))
         .append(ColoredDoc::line())
         .append(ColoredDoc::colored_text(
-            "─".repeat(80),
+            "-".repeat(80),
             color_spec(Color::Black, true),
         ))
         .append(ColoredDoc::line());
 
-    if let Some(instructions) = &model.custom_instructions {
-        doc = doc
-            .append(ColoredDoc::colored_text(
-                format!("  {}", instructions),
-                dimmed_spec(),
-            ))
-            .append(ColoredDoc::line());
-    } else {
+    let has_any_instructions = model.custom_instructions.is_some() 
+        || model.module_custom_instructions.is_some();
+
+    if !has_any_instructions {
         doc = doc
             .append(ColoredDoc::colored_text(
                 "  No custom instructions defined",
                 dimmed_spec(),
             ))
             .append(ColoredDoc::line());
+    } else {
+        // Show legacy custom_instructions if present
+        if let Some(instructions) = &model.custom_instructions {
+            doc = doc
+                .append(ColoredDoc::colored_text(
+                    "  [DEPRECATED] custom_instructions:",
+                    color_spec(Color::Yellow, true),
+                ))
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::colored_text(
+                    format!("    {}", instructions.lines().collect::<Vec<_>>().join("\n    ")),
+                    dimmed_spec(),
+                ))
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::colored_text(
+                    "  MIGRATION NEEDED:",
+                    color_spec(Color::Cyan, true),
+                ))
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::colored_text(
+                    "  Replace the above with:",
+                    color_spec(Color::Cyan, false),
+                ))
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::colored_text(
+                    "  module_custom_instructions:",
+                    color_spec(Color::Green, false),
+                ))
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::colored_text(
+                    "    sql_generation: |",
+                    color_spec(Color::Green, false),
+                ))
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::colored_text(
+                    format!("      {}", instructions.lines().collect::<Vec<_>>().join("\n      ")),
+                    color_spec(Color::Green, false),
+                ))
+                .append(ColoredDoc::line())
+                .append(ColoredDoc::line());
+        }
+
+        // Show module_custom_instructions if present
+        if let Some(module_instructions) = &model.module_custom_instructions {
+            doc = doc
+                .append(ColoredDoc::colored_text(
+                    "  module_custom_instructions:",
+                    color_spec(Color::Cyan, true),
+                ))
+                .append(ColoredDoc::line());
+
+            if let Some(question_cat) = &module_instructions.question_categorization {
+                doc = doc
+                    .append(ColoredDoc::colored_text(
+                        "    question_categorization:",
+                        color_spec(Color::White, true),
+                    ))
+                    .append(ColoredDoc::line())
+                    .append(ColoredDoc::colored_text(
+                        format!("      {}", question_cat.lines().collect::<Vec<_>>().join("\n      ")),
+                        dimmed_spec(),
+                    ))
+                    .append(ColoredDoc::line())
+                    .append(ColoredDoc::line());
+            }
+
+            if let Some(sql_gen) = &module_instructions.sql_generation {
+                doc = doc
+                    .append(ColoredDoc::colored_text(
+                        "    sql_generation:",
+                        color_spec(Color::White, true),
+                    ))
+                    .append(ColoredDoc::line())
+                    .append(ColoredDoc::colored_text(
+                        format!("      {}", sql_gen.lines().collect::<Vec<_>>().join("\n      ")),
+                        dimmed_spec(),
+                    ))
+                    .append(ColoredDoc::line());
+            }
+        }
     }
     doc = doc.append(ColoredDoc::line());
 
     // Success footer
     doc.append(ColoredDoc::colored_text(
-        "═".repeat(80),
+        "=".repeat(80),
         color_spec(Color::Blue, true),
     ))
     .append(ColoredDoc::line())
     .append(ColoredDoc::colored_text(
-        "✓",
+        "*",
         color_spec(Color::Green, true),
     ))
     .append(ColoredDoc::text(" "))
@@ -502,7 +679,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
     ))
     .append(ColoredDoc::line())
     .append(ColoredDoc::colored_text(
-        "═".repeat(80),
+        "=".repeat(80),
         color_spec(Color::Blue, true),
     ))
 }

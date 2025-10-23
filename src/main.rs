@@ -1,5 +1,5 @@
 use clap::Parser;
-use snowflake_semantic_view_validator::{format_error, format_success, validate_file, ColoredDoc};
+use snowflake_semantic_view_validator::{format_error, format_success, format_warnings, validate_file, ColoredDoc};
 use termcolor::{ColorChoice, StandardStream};
 
 /// Snowflake Semantic View Validator (ssvv)
@@ -58,9 +58,17 @@ fn main() {
 
     match cli.file {
         Some(path) => match validate_file(&path) {
-            Ok(model) => {
-                let doc = format_success(&model);
+            Ok(result) => {
                 let mut stdout = StandardStream::stdout(ColorChoice::Auto);
+                
+                // Show warnings first if any
+                if !result.warnings.is_empty() {
+                    let warnings_doc = format_warnings(&result.warnings);
+                    warnings_doc.render_colored(&mut stdout).unwrap();
+                }
+                
+                // Then show the success summary
+                let doc = format_success(&result.model);
                 doc.render_colored(&mut stdout).unwrap();
             }
             Err(e) => {

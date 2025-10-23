@@ -203,7 +203,11 @@ verified_queries:
       GROUP BY MONTH
       ORDER BY MONTH
 
-custom_instructions: |
-  When analyzing revenue, always exclude cancelled orders unless explicitly requested.
-  Customer segments should be capitalized consistently.
-  All monetary values are in USD.
+module_custom_instructions:
+  question_categorization: |
+    - If the user asks about revenue without specifying a time period, ask them to clarify the date range.
+    - Reject questions about individual customer credit card information. Ask users to contact their admin.
+  sql_generation: |
+    When analyzing revenue, always exclude cancelled orders unless explicitly requested.
+    Customer segments should be capitalized consistently.
+    All monetary values are in USD and should be rounded to 2 decimal places.

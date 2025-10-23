@@ -1,0 +1,24 @@
+name: MODULE_INSTRUCTIONS_EXAMPLE
+description: Example demonstrating module_custom_instructions
+tables:
+  - name: SALES
+    base_table:
+      database: SALES_DB
+      schema: PUBLIC
+      table: SALES
+    dimensions:
+      - name: PRODUCT_TYPE
+        expr: PRODUCT_TYPE
+        data_type: VARCHAR
+    facts:
+      - name: REVENUE
+        expr: REVENUE
+        data_type: FLOAT
+
+module_custom_instructions:
+  question_categorization: |
+    - If the question asks for users without providing a product_type, consider this question UNCLEAR and ask the user to specify product_type.
+    - Reject all questions asking about salary information. Ask users to contact their admin.
+  sql_generation: |
+    Ensure that all numeric columns are rounded to 2 decimal points in the output.
+    For any percentage or rate calculation, multiply the result by 100.

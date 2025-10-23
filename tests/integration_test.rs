@@ -32,8 +32,8 @@ fn run_valid_test_case(fixture_name: &str) {
         result.err()
     );
 
-    let model = result.unwrap();
-    let doc = format_success(&model);
+    let validation_result = result.unwrap();
+    let doc = format_success(&validation_result.model);
     let actual = doc.render_plain();
 
     let expected = fs::read_to_string(&expected_path).expect(&format!(
@@ -104,4 +104,14 @@ fn test_invalid_no_tables() {
 #[test]
 fn test_invalid_yaml_syntax() {
     run_invalid_test_case("invalid_yaml_syntax");
+}
+
+#[test]
+fn test_valid_module_custom_instructions() {
+    run_valid_test_case("valid_module_custom_instructions");
+}
+
+#[test]
+fn test_invalid_empty_module_instructions() {
+    run_invalid_test_case("invalid_empty_module_instructions");
 }

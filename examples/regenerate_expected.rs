@@ -5,9 +5,11 @@ fn main() {
     let fixtures = vec![
         ("valid_basic", true),
         ("valid_with_relationships", true),
+        ("valid_module_custom_instructions", true),
         ("invalid_missing_name", false),
         ("invalid_no_tables", false),
         ("invalid_yaml_syntax", false),
+        ("invalid_empty_module_instructions", false),
     ];
 
     for (name, is_valid) in fixtures {
@@ -16,7 +18,7 @@ fn main() {
 
         let result = validate_file(&path);
         let doc = if is_valid {
-            format_success(&result.unwrap())
+            format_success(&result.unwrap().model)
         } else {
             format_error(&result.unwrap_err())
         };
