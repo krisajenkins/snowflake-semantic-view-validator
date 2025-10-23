@@ -1,0 +1,42 @@
+name: THREE_COLUMN_COMPOSITE_KEY
+description: Test semantic model with three-column composite primary key
+tables:
+  - name: SALES_TRANSACTIONS
+    description: Sales transactions with composite key across region, store, and transaction
+    base_table:
+      database: SALES_DB
+      schema: PUBLIC
+      table: SALES_TRANSACTIONS
+    primary_key:
+      columns:
+        - REGION_ID
+        - STORE_ID
+        - TRANSACTION_ID
+    dimensions:
+      - name: REGION_ID
+        expr: REGION_ID
+        data_type: VARCHAR
+        description: Region identifier (part of composite key)
+      - name: STORE_ID
+        expr: STORE_ID
+        data_type: VARCHAR
+        description: Store identifier (part of composite key)
+      - name: TRANSACTION_ID
+        expr: TRANSACTION_ID
+        data_type: VARCHAR
+        description: Transaction identifier (part of composite key)
+      - name: CUSTOMER_NAME
+        expr: CUSTOMER_NAME
+        data_type: VARCHAR
+        description: Customer name
+    time_dimensions:
+      - name: TRANSACTION_DATE
+        expr: TRANSACTION_DATE
+        data_type: TIMESTAMP
+        description: When the transaction occurred
+    facts:
+      - name: AMOUNT
+        expr: AMOUNT
+        data_type: FLOAT
+        description: Transaction amount
+        aggregation: sum

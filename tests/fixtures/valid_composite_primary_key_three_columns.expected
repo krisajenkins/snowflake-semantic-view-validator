@@ -1,0 +1,32 @@
+================================================================================
+  SEMANTIC MODEL VALIDATION SUMMARY
+================================================================================
+
+Name: THREE_COLUMN_COMPOSITE_KEY
+Description: Test semantic model with three-column composite primary key
+
+TABLES
+--------------------------------------------------------------------------------
+  * SALES_TRANSACTIONS
+    Location: SALES_DB.PUBLIC.SALES_TRANSACTIONS
+    Dimensions: 4
+    Time Dimensions: 1
+    Facts: 1
+    Metrics: 0
+    Filters: 0
+
+RELATIONSHIPS
+--------------------------------------------------------------------------------
+  No relationships defined
+
+VERIFIED QUERIES
+--------------------------------------------------------------------------------
+  No verified queries defined
+
+CUSTOM INSTRUCTIONS
+--------------------------------------------------------------------------------
+  No custom instructions defined
+
+================================================================================
+* Validation successful!
+================================================================================

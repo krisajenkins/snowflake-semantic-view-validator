@@ -1,0 +1,32 @@
+================================================================================
+  SEMANTIC MODEL VALIDATION SUMMARY
+================================================================================
+
+Name: COMPOSITE_PRIMARY_KEY_TEST
+Description: Test semantic model with composite primary keys
+
+TABLES
+--------------------------------------------------------------------------------
+  * ORDER_ITEMS
+    Location: SALES_DB.PUBLIC.ORDER_ITEMS
+    Dimensions: 3
+    Time Dimensions: 0
+    Facts: 2
+    Metrics: 0
+    Filters: 0
+
+RELATIONSHIPS
+--------------------------------------------------------------------------------
+  No relationships defined
+
+VERIFIED QUERIES
+--------------------------------------------------------------------------------
+  No verified queries defined
+
+CUSTOM INSTRUCTIONS
+--------------------------------------------------------------------------------
+  No custom instructions defined
+
+================================================================================
+* Validation successful!
+================================================================================

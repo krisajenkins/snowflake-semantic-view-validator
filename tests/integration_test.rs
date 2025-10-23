@@ -115,3 +115,13 @@ fn test_valid_module_custom_instructions() {
 fn test_invalid_empty_module_instructions() {
     run_invalid_test_case("invalid_empty_module_instructions");
 }
+
+#[test]
+fn test_valid_composite_primary_key() {
+    run_valid_test_case("valid_composite_primary_key");
+}
+
+#[test]
+fn test_valid_composite_primary_key_three_columns() {
+    run_valid_test_case("valid_composite_primary_key_three_columns");
+}
