@@ -1,122 +1,1369 @@
-name: SPEEDRUN
-description: This semantic model describes the Speedrun dataset from Kaggle, based
-  on Speedrun.com. Many gamers who have competed to be the fastest to complete specific
-  video games.
+name: speedrun_semantic_model
+description: |
+  Semantic model for speedrun data including games, runs, users, and leaderboards.
+
+  IMPORTANT: Data Freshness
+  - The database contains historical speedrun data
+  - Before using time-based filters, check the actual date range with:
+    SELECT MAX(date) as most_recent_run, MIN(date) as oldest_run FROM KJ_SPEEDRUN.PUBLIC.runs
+  - Adjust time filters based on available data rather than CURRENT_DATE() if data is not current
+module_custom_instructions:
+  sql_generation: |
+    ## Query Construction Guidelines
+    
+    1. **Always use fully qualified table names**: All tables must be referenced as `KJ_SPEEDRUN.PUBLIC.table_name`
+    
+    2. **Handling array columns (genres and game_types)**: 
+       - Games can have multiple genres and game_types stored in ARRAY columns
+       - To analyze by genre, use LATERAL FLATTEN to expand the genres array:
+         ```sql
+         FROM KJ_SPEEDRUN.PUBLIC.games games, 
+         LATERAL FLATTEN(input => games.genres) f 
+         JOIN KJ_SPEEDRUN.PUBLIC.genres g ON f.value::STRING = g.genre_id
+         ```
+       - To analyze by game_type, use LATERAL FLATTEN to expand the game_types array:
+         ```sql
+         FROM KJ_SPEEDRUN.PUBLIC.games games,
+         LATERAL FLATTEN(input => games.game_types) gt
+         WHERE gt.value::STRING = 'rom-hack'
+         ```
+       - When counting games across genres or types, be aware that the same game will appear in multiple counts
+    
+    3. **Distinguishing run types**:
+       - Full-game runs: `level_id IS NULL`
+       - Individual level (IL) runs: `level_id IS NOT NULL`
+       - Always be explicit about which type of run is being queried
+    
+    4. **Time-based filtering**:
+       - For recent activity, filter on the `runs.date` column
+       - IMPORTANT: Check data freshness first with MAX(date) to ensure data is current
+       - Common patterns:
+         - Past 12 months: `WHERE date >= DATEADD(month, -12, CURRENT_DATE())`
+         - Past year: `WHERE date >= DATEADD(year, -1, CURRENT_DATE())`
+         - Past 30 days: `WHERE date >= DATEADD(day, -30, CURRENT_DATE())`
+         - Specific date range: `WHERE date >= '2024-12-24' AND date <= '2025-01-24'`
+    
+    5. **Verified queries as templates**:
+       - Reference the verified_queries section for proven SQL patterns
+       - These queries demonstrate correct joins, filters, and aggregations
+    
+    6. **Run status filtering**:
+       - Most analyses should focus on verified runs: `WHERE status = 'verified'`
+       - Unless specifically asked about pending or rejected runs
+    
+    7. **Game name matching**:
+       - Use ILIKE for flexible, case-insensitive matching: `WHERE game_name ILIKE '%search term%'`
+       - Some games have variants (e.g., "Game Name", "Game Name (Beta)", "Game Name Workshop")
 tables:
-  - name: GAMES
+  - name: games
+    description: |
+      Information about speedrun games.
+      Note: Some games have multiple variants (e.g., "Game Name", "Game Name (Beta)", "Game Name Workshop").
+      Use ILIKE '%game name%' for flexible matching, or exact match for specific variants.
     base_table:
       database: KJ_SPEEDRUN
       schema: PUBLIC
-      table: GAMES
+      table: games
+    primary_key:
+      columns:
+        - game_id
     dimensions:
-      - name: GAMEID
-        expr: GAMEID
-        data_type: VARCHAR
-      - name: GAMENAME
-        expr: GAMENAME
-        data_type: VARCHAR
-      - name: URL
-        expr: URL
-        data_type: VARCHAR
-      - name: GAMETYPES
-        expr: GAMETYPES
-        data_type: VARCHAR
-      - name: PLATFORMS
-        expr: PLATFORMS
-        data_type: VARCHAR
-      - name: REGIONS
-        expr: REGIONS
-        data_type: VARCHAR
-      - name: GENRES
-        expr: GENRES
-        data_type: VARCHAR
-      - name: ENGINES
-        expr: ENGINES
-        data_type: VARCHAR
-      - name: DEVELOPERS
-        expr: DEVELOPERS
-        data_type: VARCHAR
-      - name: PUBLISHERS
-        expr: PUBLISHERS
-        data_type: VARCHAR
-      - name: RUNSREQUIREVERIFICATION
-        expr: RUNSREQUIREVERIFICATION
+      - name: game_id
+        synonyms:
+          - game identifier
+        description: Unique identifier for the game
+        expr: game_id
+        data_type: TEXT
+        unique: true
+      - name: game_name
+        synonyms:
+          - game title
+          - title
+        description: |
+          Name of the game. May include variant suffixes like "(Beta Build)", "Workshop", "(Alpha Build)".
+          Use ILIKE for case-insensitive partial matching.
+        expr: game_name
+        data_type: TEXT
+        sample_values:
+          - "Super Mario 64"
+          - "The Legend of Zelda: Ocarina of Time"
+          - "Portal"
+          - "Minecraft"
+          - "A Hat in Time"
+      - name: url
+        description: URL to the game page
+        expr: url
+        data_type: TEXT
+      - name: game_types
+        description: |
+          Game types as an array.
+          NOTE: Games can have multiple types. When joining or filtering by type,
+          use LATERAL FLATTEN to expand the array similar to how genres are handled.
+        expr: game_types
+        data_type: ARRAY
+      - name: platforms
+        description: Platforms the game is available on
+        expr: platforms
+        data_type: TEXT
+      - name: regions
+        description: Regions where the game is available
+        expr: regions
+        data_type: TEXT
+      - name: genres
+        description: |
+          Game genres as an array.
+          NOTE: Games can have multiple genres. When joining with the genres table using LATERAL FLATTEN,
+          each game will have one row per genre. Be careful when counting distinct games across genres
+          as the same game may appear in multiple genre counts.
+        expr: genres
+        data_type: ARRAY
+      - name: engines
+        description: Game engines used
+        expr: engines
+        data_type: TEXT
+      - name: developers
+        description: Game developers
+        expr: developers
+        data_type: TEXT
+      - name: publishers
+        description: Game publishers
+        expr: publishers
+        data_type: TEXT
+      - name: runs_require_verification
+        description: Whether runs require verification
+        expr: runs_require_verification
         data_type: BOOLEAN
-      - name: RUNSREQUIREVIDEO
-        expr: RUNSREQUIREVIDEO
+      - name: runs_require_video
+        description: Whether runs require video proof
+        expr: runs_require_video
         data_type: BOOLEAN
-      - name: RUNTIMINGOPTIONS
-        expr: RUNTIMINGOPTIONS
-        data_type: VARCHAR
-      - name: RUNDEFAULTTIMINGOPTION
-        expr: RUNDEFAULTTIMINGOPTION
-        data_type: VARCHAR
-      - name: RUNSEMULATORSALLOWED
-        expr: RUNSEMULATORSALLOWED
+      - name: run_timing_options
+        description: Available timing options for runs
+        expr: run_timing_options
+        data_type: TEXT
+      - name: run_default_timing_option
+        description: Default timing option for runs
+        expr: run_default_timing_option
+        data_type: TEXT
+      - name: runs_emulators_allowed
+        description: Whether emulators are allowed for runs
+        expr: runs_emulators_allowed
         data_type: BOOLEAN
-      - name: ISROMHACK
-        expr: ISROMHACK
+      - name: is_romhack
+        description: Whether the game is a ROM hack
+        expr: is_romhack
         data_type: BOOLEAN
     time_dimensions:
-      - name: RELEASEDATE
-        expr: RELEASEDATE
+      - name: release_date
+        synonyms:
+          - launch date
+        description: Date when the game was released
+        expr: release_date
         data_type: DATE
-      - name: CREATEDDATE
-        expr: CREATEDDATE
-        data_type: TIMESTAMP_NTZ
-  - name: LEADERBOARDS
+      - name: created_date
+        description: Date when the game entry was created
+        expr: created_date
+        data_type: TIMESTAMP
+    filters:
+      - name: requires_video
+        synonyms:
+          - video required
+          - must have video
+        description: Filter to show only games that require video proof for runs
+        expr: runs_require_video = TRUE
+      - name: allows_emulators
+        synonyms:
+          - emulator allowed
+          - emu friendly
+        description: Filter to show only games that allow emulator runs
+        expr: runs_emulators_allowed = TRUE
+      - name: romhacks_only
+        synonyms:
+          - rom hacks
+          - modded games
+        description: Filter to show only ROM hacks
+        expr: is_romhack = TRUE
+      - name: official_games
+        synonyms:
+          - non-romhacks
+          - official releases
+        description: Filter to show only official games (not ROM hacks)
+        expr: is_romhack = FALSE
+  - name: runs
+    description: |
+      Speedrun submissions and records.
+      IMPORTANT: level_id is NULL for full-game runs, non-NULL for individual level (IL) runs.
+      Use "WHERE level_id IS NOT NULL" to filter for IL runs only.
+      Use "WHERE level_id IS NULL" to filter for full-game runs only.
     base_table:
       database: KJ_SPEEDRUN
       schema: PUBLIC
-      table: LEADERBOARDS
+      table: runs
+    primary_key:
+      columns:
+        - run_id
     dimensions:
-      - name: RUNID
-        expr: RUNID
-        data_type: VARCHAR
-      - name: GAMEID
-        expr: GAMEID
-        data_type: VARCHAR
-      - name: CATEGORYID
-        expr: CATEGORYID
-        data_type: VARCHAR
-      - name: LEVELID
-        expr: LEVELID
-        data_type: VARCHAR
-      - name: PLACE
-        expr: PLACE
-        data_type: NUMBER
-      - name: PLATFORM
-        expr: PLATFORM
-        data_type: VARCHAR
-      - name: ISEMULATED
-        expr: ISEMULATED
+      - name: run_id
+        synonyms:
+          - run identifier
+        description: Unique identifier for the run
+        expr: run_id
+        data_type: TEXT
+        unique: true
+      - name: game_id
+        description: Game identifier for the run
+        expr: game_id
+        data_type: TEXT
+      - name: category_id
+        description: Category identifier for the run (e.g., Any%, 100%, etc.)
+        expr: category_id
+        data_type: TEXT
+      - name: level_id
+        description: |
+          Level identifier for the run. 
+          NULL = full-game run
+          Non-NULL = individual level (IL) run
+        expr: level_id
+        data_type: TEXT
+      - name: platform
+        synonyms:
+          - console
+          - system
+        description: |
+          Platform used for the run (platform_id).
+          Join with platforms table to get platform_name.
+          Common platforms include PC, Android, Web, Switch, PlayStation, Xbox, etc.
+        expr: platform
+        data_type: TEXT
+      - name: is_emulated
+        description: Whether the run was performed on an emulator
+        expr: is_emulated
         data_type: BOOLEAN
-      - name: PLAYERS
-        expr: PLAYERS
-        data_type: VARCHAR
-      - name: EXAMINER
-        expr: EXAMINER
-        data_type: VARCHAR
-      - name: VARIABLESANDVALUES
-        expr: VARIABLESANDVALUES
-        data_type: VARCHAR
+      - name: players
+        description: Players who participated in the run
+        expr: players
+        data_type: ARRAY
+      - name: examiner
+        description: User who examined/verified the run
+        expr: examiner
+        data_type: TEXT
+      - name: variables_and_values
+        description: Run variables and their values
+        expr: variables_and_values
+        data_type: TEXT
+      - name: status
+        synonyms:
+          - run status
+          - verification status
+          - approval status
+          - submission status
+        description: |
+          Status of the run. Common values:
+          - 'verified': Run has been reviewed and approved (use this for most analyses)
+          - 'new': Run is pending verification
+          - 'rejected': Run was rejected/disqualified
+        expr: status
+        data_type: TEXT
+        sample_values:
+          - "verified"
+          - "new"
+          - "rejected"
+      - name: status_reason
+        description: Reason for the run status
+        expr: status_reason
+        data_type: TEXT
     time_dimensions:
-      - name: DATE
-        expr: DATE
+      - name: date
+        synonyms:
+          - run date
+          - submission date
+        description: |
+          Date when the run was performed.
+          Common time filters:
+          - Past 12 months: WHERE date >= DATEADD(month, -12, CURRENT_DATE())
+          - Past year: WHERE date >= DATEADD(year, -1, CURRENT_DATE())
+          - Past 30 days: WHERE date >= DATEADD(day, -30, CURRENT_DATE())
+          - Specific year: WHERE YEAR(date) = 2024
+        expr: date
         data_type: DATE
-      - name: VERIFIEDDATE
-        expr: VERIFIEDDATE
-        data_type: TIMESTAMP_NTZ
+      - name: verified_date
+        synonyms:
+          - verification date
+          - approval date
+        description: Date when the run was verified
+        expr: verified_date
+        data_type: TIMESTAMP
     facts:
-      - name: PRIMARYTIME
-        expr: PRIMARYTIME
-        data_type: FLOAT
-      - name: REALTIME
-        expr: REALTIME
-        data_type: FLOAT
-      - name: REALTIMENOLOADS
-        expr: REALTIMENOLOADS
-        data_type: FLOAT
-      - name: INGAMETIME
-        expr: INGAMETIME
-        data_type: FLOAT
+      - name: primary_time
+        synonyms:
+          - time
+          - duration
+          - speedrun time
+        description: Primary time for the run in seconds
+        expr: primary_time
+        data_type: NUMBER
+      - name: real_time
+        synonyms:
+          - realtime
+          - rta
+        description: Real time for the run in seconds
+        expr: real_time
+        data_type: NUMBER
+      - name: real_time_no_loads
+        synonyms:
+          - real time without loads
+          - rta no loads
+        description: Real time without loading screens in seconds
+        expr: real_time_no_loads
+        data_type: NUMBER
+      - name: in_game_time
+        synonyms:
+          - igt
+          - game time
+        description: In-game time for the run in seconds
+        expr: in_game_time
+        data_type: NUMBER
+    filters:
+      - name: individual_level_runs
+        synonyms:
+          - IL runs
+          - level runs
+          - individual levels
+          - specific level runs
+        description: Filter to show only individual level (IL) runs, excluding full-game runs
+        expr: level_id IS NOT NULL
+      - name: full_game_runs
+        synonyms:
+          - full game
+          - complete game runs
+          - any% runs
+          - 100% runs
+        description: Filter to show only full-game runs, excluding individual level runs
+        expr: level_id IS NULL
+      - name: verified_runs
+        synonyms:
+          - verified
+          - approved runs
+          - legitimate runs
+          - accepted runs
+          - valid runs
+        description: |
+          Filter to show only verified/approved runs.
+          IMPORTANT: Most analyses should use this filter to exclude pending and rejected runs.
+          This ensures counts reflect only legitimate, approved speedruns.
+        expr: status = 'verified'
+      - name: rejected_or_unvalidated_runs
+        synonyms:
+          - rejected runs
+          - unverified runs
+          - pending runs
+          - problematic runs
+        description: Filter to show only rejected or pending (new) runs
+        expr: status IN ('rejected', 'new')
+      - name: emulator_runs
+        synonyms:
+          - emulated
+          - emu runs
+        description: Filter to show only runs performed on emulators
+        expr: is_emulated = TRUE
+      - name: console_runs
+        synonyms:
+          - real hardware
+          - non-emulated
+          - physical console
+        description: Filter to show only runs performed on real hardware (not emulated)
+        expr: is_emulated = FALSE
+  - name: users
+    description: Speedrun community users
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: users
+    primary_key:
+      columns:
+        - user_id
+    dimensions:
+      - name: user_id
+        synonyms:
+          - user identifier
+        description: Unique identifier for the user
+        expr: user_id
+        data_type: TEXT
+        unique: true
+      - name: username
+        synonyms:
+          - user name
+          - player name
+        description: Username of the user
+        expr: username
+        data_type: TEXT
+      - name: location
+        synonyms:
+          - country
+          - region
+        description: User's location
+        expr: location
+        data_type: TEXT
+    time_dimensions:
+      - name: signup_date
+        synonyms:
+          - registration date
+          - join date
+        description: Date when the user signed up
+        expr: signup_date
+        data_type: TIMESTAMP
+  - name: categories
+    description: Speedrun categories for games
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: categories
+    primary_key:
+      columns:
+        - category_id
+    dimensions:
+      - name: parent_game_id
+        description: Game identifier this category belongs to
+        expr: parent_game_id
+        data_type: TEXT
+      - name: category_id
+        synonyms:
+          - category identifier
+        description: Unique identifier for the category
+        expr: category_id
+        data_type: TEXT
+        unique: true
+      - name: category_name
+        synonyms:
+          - category title
+        description: Name of the category
+        expr: category_name
+        data_type: TEXT
+        sample_values:
+          - "Any%"
+          - "100%"
+          - "All Dungeons"
+          - "Glitchless"
+          - "No Major Glitches"
+      - name: rules
+        description: Rules for the category
+        expr: rules
+        data_type: TEXT
+      - name: type
+        synonyms:
+          - category type
+        description: Type of the category
+        expr: type
+        data_type: TEXT
+    facts:
+      - name: num_players
+        synonyms:
+          - number of players
+          - player count
+        description: Number of players in the category
+        expr: num_players
+        data_type: NUMBER
+  - name: platforms
+    description: Gaming platforms
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: platforms
+    primary_key:
+      columns:
+        - platform_id
+    dimensions:
+      - name: platform_id
+        synonyms:
+          - platform identifier
+        description: Unique identifier for the platform
+        expr: platform_id
+        data_type: TEXT
+        unique: true
+      - name: platform_name
+        synonyms:
+          - platform title
+          - console name
+        description: Name of the platform
+        expr: platform_name
+        data_type: TEXT
+    facts:
+      - name: release_year
+        synonyms:
+          - year released
+          - launch year
+        description: Year the platform was released
+        expr: release_year
+        data_type: NUMBER
+  - name: levels
+    description: |
+      Game levels for speedruns. 
+      Note: This table does NOT contain level ordering/sequence information.
+      Individual level runs (ILs) have a non-null level_id in the runs table.
+      Full game runs have a null level_id in the runs table.
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: levels
+    primary_key:
+      columns:
+        - level_id
+    dimensions:
+      - name: parent_game_id
+        description: Game identifier this level belongs to
+        expr: parent_game_id
+        data_type: TEXT
+      - name: level_id
+        synonyms:
+          - level identifier
+        description: Unique identifier for the level
+        expr: level_id
+        data_type: TEXT
+        unique: true
+      - name: level_name
+        synonyms:
+          - level title
+          - stage name
+        description: |
+          Name of the level. Often includes chapter/world prefix (e.g., "Mafia Town - Welcome to Mafia Town").
+          No ordering information is stored - level names are not sequential.
+        expr: level_name
+        data_type: TEXT
+      - name: rules
+        description: Rules for the level
+        expr: rules
+        data_type: TEXT
+  - name: developers
+    description: Game developers
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: developers
+    primary_key:
+      columns:
+        - developer_id
+    dimensions:
+      - name: developer_id
+        synonyms:
+          - developer identifier
+        description: Unique identifier for the developer
+        expr: developer_id
+        data_type: TEXT
+        unique: true
+      - name: name
+        synonyms:
+          - developer name
+          - studio name
+        description: Name of the developer
+        expr: name
+        data_type: TEXT
+  - name: publishers
+    description: Game publishers
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: publishers
+    primary_key:
+      columns:
+        - publisher_id
+    dimensions:
+      - name: publisher_id
+        synonyms:
+          - publisher identifier
+        description: Unique identifier for the publisher
+        expr: publisher_id
+        data_type: TEXT
+        unique: true
+      - name: name
+        synonyms:
+          - publisher name
+          - company name
+        description: Name of the publisher
+        expr: name
+        data_type: TEXT
+  - name: genres
+    description: Game genres
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: genres
+    primary_key:
+      columns:
+        - genre_id
+    dimensions:
+      - name: genre_id
+        synonyms:
+          - genre identifier
+        description: Unique identifier for the genre
+        expr: genre_id
+        data_type: TEXT
+        unique: true
+      - name: name
+        synonyms:
+          - genre name
+          - genre type
+        description: Name of the genre
+        expr: name
+        data_type: TEXT
+  - name: engines
+    description: Game engines
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: engines
+    primary_key:
+      columns:
+        - engine_id
+    dimensions:
+      - name: engine_id
+        synonyms:
+          - engine identifier
+        description: Unique identifier for the engine
+        expr: engine_id
+        data_type: TEXT
+        unique: true
+      - name: name
+        synonyms:
+          - engine name
+        description: Name of the engine
+        expr: name
+        data_type: TEXT
+  - name: run_details
+    description: Detailed run variables and values
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: run_details
+    primary_key:
+      columns:
+        - run_id
+        - variable_id
+    dimensions:
+      - name: run_id
+        description: Run identifier
+        expr: run_id
+        data_type: TEXT
+      - name: variable_id
+        description: Variable identifier
+        expr: variable_id
+        data_type: TEXT
+      - name: value_id
+        description: Value identifier
+        expr: value_id
+        data_type: TEXT
+  - name: run_variables
+    description: Variables that can be set for runs
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: run_variables
+    primary_key:
+      columns:
+        - variable_id
+    dimensions:
+      - name: parent_game_id
+        description: Game identifier this variable belongs to
+        expr: parent_game_id
+        data_type: TEXT
+      - name: variable_id
+        synonyms:
+          - variable identifier
+        description: Unique identifier for the variable
+        expr: variable_id
+        data_type: TEXT
+        unique: true
+      - name: variable_name
+        synonyms:
+          - variable title
+        description: Name of the variable
+        expr: variable_name
+        data_type: TEXT
+      - name: category
+        description: Category this variable applies to
+        expr: category
+        data_type: TEXT
+      - name: scope_type
+        description: Scope type of the variable
+        expr: scope_type
+        data_type: TEXT
+      - name: scope_level
+        description: Scope level of the variable
+        expr: scope_level
+        data_type: TEXT
+      - name: is_subcategory
+        description: Whether this variable defines a subcategory
+        expr: is_subcategory
+        data_type: BOOLEAN
+      - name: default_value
+        description: Default value for the variable
+        expr: default_value
+        data_type: TEXT
+  - name: run_values
+    description: Possible values for run variables
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: run_values
+    primary_key:
+      columns:
+        - value_id
+    dimensions:
+      - name: parent_game_id
+        description: Game identifier this value belongs to
+        expr: parent_game_id
+        data_type: TEXT
+      - name: variable_id
+        description: Variable identifier this value belongs to
+        expr: variable_id
+        data_type: TEXT
+      - name: value_id
+        synonyms:
+          - value identifier
+        description: Unique identifier for the value
+        expr: value_id
+        data_type: TEXT
+        unique: true
+      - name: value_name
+        synonyms:
+          - value title
+        description: Name of the value
+        expr: value_name
+        data_type: TEXT
+      - name: rules
+        description: Rules for this value
+        expr: rules
+        data_type: TEXT
+  - name: leaderboards
+    description: Top 5 leaderboard entries by game and category
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: leaderboards
+    dimensions:
+      - name: run_id
+        description: Run identifier
+        expr: run_id
+        data_type: TEXT
+      - name: game_id
+        description: Game identifier
+        expr: game_id
+        data_type: TEXT
+      - name: game_name
+        synonyms:
+          - game title
+        description: Name of the game
+        expr: game_name
+        data_type: TEXT
+      - name: category_id
+        description: Category identifier
+        expr: category_id
+        data_type: TEXT
+      - name: category_name
+        synonyms:
+          - category title
+        description: Name of the category
+        expr: category_name
+        data_type: TEXT
+      - name: platform_id
+        description: Platform identifier
+        expr: platform_id
+        data_type: TEXT
+      - name: platform_name
+        synonyms:
+          - platform title
+        description: Name of the platform
+        expr: platform_name
+        data_type: TEXT
+    facts:
+      - name: rank
+        synonyms:
+          - position
+          - placement
+        description: Rank on the leaderboard
+        expr: rank
+        data_type: NUMBER
+      - name: primary_time
+        synonyms:
+          - time
+          - duration
+        description: Primary time for the run in seconds
+        expr: primary_time
+        data_type: NUMBER
+  - name: game_ids
+    description: List of game identifiers
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: game_ids
+    dimensions:
+      - name: game_id
+        description: Game identifier
+        expr: game_id
+        data_type: TEXT
+  - name: user_ids
+    description: List of user identifiers
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: user_ids
+    dimensions:
+      - name: user_id
+        description: User identifier
+        expr: user_id
+        data_type: TEXT
+  - name: franchises
+    description: |
+      Game franchise mappings showing which games belong to which franchises.
+      Includes both manual franchise assignments and automatically detected franchises.
+      Use this to analyze speedrun activity across game series (e.g., Mario, Zelda, Minecraft).
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: franchises
+    primary_key:
+      columns:
+        - game_id
+        - franchise_name
+    dimensions:
+      - name: game_id
+        description: Game identifier
+        expr: game_id
+        data_type: TEXT
+      - name: game_name
+        synonyms:
+          - game title
+        description: Name of the game
+        expr: game_name
+        data_type: TEXT
+      - name: franchise_name
+        synonyms:
+          - franchise
+          - series name
+          - game series
+        description: |
+          Name of the franchise this game belongs to.
+          Examples: 'Super Mario (Main Series)', 'The Legend of Zelda', 'Minecraft', 'ROBLOX Games'
+          Games not part of a franchise are marked as 'Other'
+        expr: franchise_name
+        data_type: TEXT
+        sample_values:
+          - "Super Mario (Main Series)"
+          - "The Legend of Zelda"
+          - "Minecraft"
+          - "ROBLOX Games"
+          - "Sonic the Hedgehog"
+          - "Portal"
+      - name: clean_name
+        description: Cleaned version of game name with variants removed
+        expr: clean_name
+        data_type: TEXT
+      - name: auto_franchise
+        description: Automatically detected franchise name based on game name patterns
+        expr: auto_franchise
+        data_type: TEXT
+    facts:
+      - name: franchise_game_count
+        synonyms:
+          - games in franchise
+          - franchise size
+        description: Number of games in this franchise
+        expr: franchise_game_count
+        data_type: NUMBER
+relationships:
+  - name: runs_to_games
+    left_table: runs
+    right_table: games
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: game_id
+        right_column: game_id
+  - name: runs_to_categories
+    left_table: runs
+    right_table: categories
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: category_id
+        right_column: category_id
+  - name: runs_to_levels
+    left_table: runs
+    right_table: levels
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: level_id
+        right_column: level_id
+  - name: runs_to_platforms
+    left_table: runs
+    right_table: platforms
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: platform
+        right_column: platform_id
+  - name: run_details_to_runs
+    left_table: run_details
+    right_table: runs
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: run_id
+        right_column: run_id
+  - name: categories_to_games
+    left_table: categories
+    right_table: games
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: parent_game_id
+        right_column: game_id
+  - name: levels_to_games
+    left_table: levels
+    right_table: games
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: parent_game_id
+        right_column: game_id
+  - name: run_details_to_run_variables
+    left_table: run_details
+    right_table: run_variables
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: variable_id
+        right_column: variable_id
+  - name: run_details_to_run_values
+    left_table: run_details
+    right_table: run_values
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: variable_id
+        right_column: variable_id
+      - left_column: value_id
+        right_column: value_id
+  - name: run_variables_to_games
+    left_table: run_variables
+    right_table: games
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: parent_game_id
+        right_column: game_id
+  - name: run_values_to_games
+    left_table: run_values
+    right_table: games
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: parent_game_id
+        right_column: game_id
+  - name: run_values_to_run_variables
+    left_table: run_values
+    right_table: run_variables
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: parent_game_id
+        right_column: parent_game_id
+      - left_column: variable_id
+        right_column: variable_id
+  - name: runs_to_examiner
+    left_table: runs
+    right_table: users
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: examiner
+        right_column: user_id
+  - name: leaderboards_to_games
+    left_table: leaderboards
+    right_table: games
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: game_id
+        right_column: game_id
+  - name: leaderboards_to_categories
+    left_table: leaderboards
+    right_table: categories
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: category_id
+        right_column: category_id
+  - name: leaderboards_to_platforms
+    left_table: leaderboards
+    right_table: platforms
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: platform_id
+        right_column: platform_id
+  - name: leaderboards_to_runs
+    left_table: leaderboards
+    right_table: runs
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: run_id
+        right_column: run_id
+  - name: franchises_to_games
+    left_table: franchises
+    right_table: games
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: game_id
+        right_column: game_id
+  - name: runs_to_franchises
+    left_table: runs
+    right_table: franchises
+    join_type: left_outer
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: game_id
+        right_column: game_id
+verified_queries:
+  - name: genre_popularity
+    question: "What are the game genres we have listed, and how popular are they?"
+    sql: |
+      WITH game_genres AS (
+        SELECT 
+          games.game_id, 
+          games.game_name, 
+          g.name as genre 
+        FROM KJ_SPEEDRUN.PUBLIC.games games, 
+        LATERAL FLATTEN(input => games.genres) f 
+        JOIN KJ_SPEEDRUN.PUBLIC.genres g ON f.value::STRING = g.genre_id
+      ) 
+      SELECT 
+        gg.genre, 
+        COUNT(DISTINCT gg.game_id) as game_count, 
+        COUNT(DISTINCT r.run_id) as run_count 
+      FROM game_genres gg 
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.runs r ON gg.game_id = r.game_id 
+      WHERE r.status = 'verified'
+      GROUP BY gg.genre 
+      ORDER BY run_count DESC 
+      LIMIT 20
+  
+  - name: a_hat_in_time_levels
+    question: "How many levels does A Hat in Time have?"
+    sql: |
+      SELECT 
+        g.game_name, 
+        COUNT(DISTINCT l.level_id) as level_count 
+      FROM KJ_SPEEDRUN.PUBLIC.games g 
+      JOIN KJ_SPEEDRUN.PUBLIC.levels l ON g.game_id = l.parent_game_id 
+      WHERE g.game_name ILIKE '%A Hat in Time%' 
+      GROUP BY g.game_name
+  
+  - name: a_hat_in_time_level_runs
+    question: "Are there any runs for specific levels for A Hat in Time?"
+    sql: |
+      SELECT 
+        l.level_name, 
+        COUNT(*) as run_count 
+      FROM KJ_SPEEDRUN.PUBLIC.runs r 
+      JOIN KJ_SPEEDRUN.PUBLIC.games g ON r.game_id = g.game_id 
+      JOIN KJ_SPEEDRUN.PUBLIC.levels l ON r.level_id = l.level_id 
+      WHERE g.game_name = 'A Hat in Time' 
+        AND r.level_id IS NOT NULL 
+        AND r.status = 'verified'
+      GROUP BY l.level_name 
+      ORDER BY run_count DESC 
+      LIMIT 15
+  
+  - name: total_individual_level_runs
+    question: "How many individual level runs are there across all games?"
+    sql: |
+      SELECT COUNT(*) as il_run_count 
+      FROM KJ_SPEEDRUN.PUBLIC.runs 
+      WHERE level_id IS NOT NULL
+        AND status = 'verified'
+  
+  - name: most_popular_games
+    question: "What are the most popular games by number of runs?"
+    sql: |
+      SELECT 
+        g.game_name, 
+        COUNT(r.run_id) as run_count 
+      FROM KJ_SPEEDRUN.PUBLIC.games g 
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.runs r ON g.game_id = r.game_id 
+      WHERE r.status = 'verified'
+      GROUP BY g.game_name 
+      ORDER BY run_count DESC 
+      LIMIT 20
+  
+  - name: most_active_games_recent
+    question: "What are the most active games in the past 12 months?"
+    sql: |
+      SELECT 
+        g.game_name,
+        COUNT(DISTINCT r.run_id) as run_count 
+      FROM KJ_SPEEDRUN.PUBLIC.runs r
+      JOIN KJ_SPEEDRUN.PUBLIC.games g ON r.game_id = g.game_id
+      WHERE r.date >= DATEADD(month, -12, CURRENT_DATE())
+        AND r.status = 'verified'
+      GROUP BY g.game_name
+      ORDER BY run_count DESC
+      LIMIT 20
+  
+  - name: genre_popularity_recent
+    question: "What are the most popular genres in the past 12 months?"
+    sql: |
+      WITH game_genres AS (
+        SELECT 
+          games.game_id, 
+          games.game_name, 
+          g.name as genre 
+        FROM KJ_SPEEDRUN.PUBLIC.games games, 
+        LATERAL FLATTEN(input => games.genres) f 
+        JOIN KJ_SPEEDRUN.PUBLIC.genres g ON f.value::STRING = g.genre_id
+      ) 
+      SELECT 
+        gg.genre, 
+        COUNT(DISTINCT gg.game_id) as game_count, 
+        COUNT(DISTINCT r.run_id) as run_count 
+      FROM game_genres gg 
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.runs r ON gg.game_id = r.game_id 
+      WHERE r.date >= DATEADD(month, -12, CURRENT_DATE())
+        AND r.status = 'verified'
+      GROUP BY gg.genre 
+      HAVING COUNT(DISTINCT r.run_id) > 0
+      ORDER BY run_count DESC 
+      LIMIT 20
+  
+  - name: games_by_genre_recent
+    question: "What are the most popular 3D platformers in the past 12 months?"
+    sql: |
+      WITH game_genres AS (
+        SELECT 
+          games.game_id, 
+          games.game_name, 
+          g.name as genre 
+        FROM KJ_SPEEDRUN.PUBLIC.games games, 
+        LATERAL FLATTEN(input => games.genres) f 
+        JOIN KJ_SPEEDRUN.PUBLIC.genres g ON f.value::STRING = g.genre_id
+      ) 
+      SELECT 
+        gg.game_name, 
+        COUNT(DISTINCT r.run_id) as run_count 
+      FROM game_genres gg 
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.runs r ON gg.game_id = r.game_id 
+      WHERE gg.genre = '3D Platformer'
+        AND r.date >= DATEADD(month, -12, CURRENT_DATE())
+        AND r.status = 'verified'
+      GROUP BY gg.game_name 
+      HAVING COUNT(DISTINCT r.run_id) > 0
+      ORDER BY run_count DESC 
+      LIMIT 20
+  
+  - name: popular_games_with_platforms
+    question: "What are the most popular games and what platforms are they played on?"
+    sql: |
+      SELECT 
+        g.game_name,
+        COUNT(DISTINCT r.run_id) as run_count,
+        LISTAGG(DISTINCT p.platform_name, ', ') WITHIN GROUP (ORDER BY p.platform_name) as platforms
+      FROM KJ_SPEEDRUN.PUBLIC.runs r
+      JOIN KJ_SPEEDRUN.PUBLIC.games g ON r.game_id = g.game_id
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.platforms p ON r.platform = p.platform_id
+      WHERE r.status = 'verified'
+      GROUP BY g.game_name
+      ORDER BY run_count DESC
+      LIMIT 20
+  
+  - name: popular_games_with_platforms_recent
+    question: "What are the most popular games in the last month and what platforms are they played on?"
+    sql: |
+      SELECT 
+        g.game_name,
+        COUNT(DISTINCT r.run_id) as run_count,
+        LISTAGG(DISTINCT p.platform_name, ', ') WITHIN GROUP (ORDER BY p.platform_name) as platforms
+      FROM KJ_SPEEDRUN.PUBLIC.runs r
+      JOIN KJ_SPEEDRUN.PUBLIC.games g ON r.game_id = g.game_id
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.platforms p ON r.platform = p.platform_id
+      WHERE r.date >= DATEADD(day, -30, CURRENT_DATE())
+        AND r.status = 'verified'
+      GROUP BY g.game_name
+      ORDER BY run_count DESC
+      LIMIT 20
+  
+  - name: platform_popularity
+    question: "What are the most popular platforms for speedrunning?"
+    sql: |
+      SELECT 
+        p.platform_name,
+        COUNT(DISTINCT r.run_id) as run_count,
+        COUNT(DISTINCT r.game_id) as game_count
+      FROM KJ_SPEEDRUN.PUBLIC.runs r
+      JOIN KJ_SPEEDRUN.PUBLIC.platforms p ON r.platform = p.platform_id
+      WHERE r.status = 'verified'
+      GROUP BY p.platform_name
+      ORDER BY run_count DESC
+      LIMIT 20
+  
+  - name: franchise_popularity
+    question: "Which game franchises have the most successful speedrun attempts?"
+    sql: |
+      SELECT 
+        f.franchise_name,
+        COUNT(DISTINCT r.run_id) as total_verified_runs,
+        COUNT(DISTINCT f.game_id) as game_count,
+        MIN(r.date) as earliest_run,
+        MAX(r.date) as most_recent_run,
+        ROUND(COUNT(DISTINCT r.run_id)::FLOAT / COUNT(DISTINCT f.game_id), 1) as avg_runs_per_game
+      FROM KJ_SPEEDRUN.PUBLIC.franchises f
+      JOIN KJ_SPEEDRUN.PUBLIC.runs r ON f.game_id = r.game_id
+      WHERE r.status = 'verified'
+        AND f.franchise_name IS NOT NULL
+      GROUP BY f.franchise_name
+      ORDER BY total_verified_runs DESC
+      LIMIT 50
+  
+  - name: top_franchises_by_game_count
+    question: "Which game franchises have the most games?"
+    sql: |
+      SELECT 
+        f.franchise_name,
+        COUNT(DISTINCT f.game_id) as game_count,
+        COUNT(DISTINCT r.run_id) as total_runs
+      FROM KJ_SPEEDRUN.PUBLIC.franchises f
+      JOIN KJ_SPEEDRUN.PUBLIC.runs r ON f.game_id = r.game_id
+      WHERE f.franchise_name IS NOT NULL 
+        AND f.franchise_name != 'Other'
+        AND r.status = 'verified'
+      GROUP BY f.franchise_name
+      ORDER BY game_count DESC
+      LIMIT 10
+  - name: franchise_with_platforms
+    question: "Which franchise has the most games and what platforms is it on?"
+    sql: |
+      SELECT 
+        f.franchise_name,
+        COUNT(DISTINCT f.game_id) as game_count,
+        LISTAGG(DISTINCT p.platform_name, ', ') WITHIN GROUP (ORDER BY p.platform_name) as platforms
+      FROM KJ_SPEEDRUN.PUBLIC.franchises f
+      JOIN KJ_SPEEDRUN.PUBLIC.runs r ON f.game_id = r.game_id
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.platforms p ON r.platform = p.platform_id
+      WHERE f.franchise_name IS NOT NULL 
+        AND f.franchise_name != 'Other'
+        AND r.status = 'verified'
+      GROUP BY f.franchise_name
+      ORDER BY game_count DESC
+      LIMIT 1
+  - name: minecraft_games_breakdown
+    question: "What Minecraft games are being speedrun?"
+    sql: |
+      SELECT 
+        g.game_name,
+        COUNT(DISTINCT r.run_id) as run_count
+      FROM KJ_SPEEDRUN.PUBLIC.franchises f
+      JOIN KJ_SPEEDRUN.PUBLIC.games g ON f.game_id = g.game_id
+      JOIN KJ_SPEEDRUN.PUBLIC.runs r ON g.game_id = r.game_id
+      WHERE f.franchise_name = 'Minecraft'
+        AND r.status = 'verified'
+      GROUP BY g.game_name
+      ORDER BY run_count DESC
+      LIMIT 20
+  - name: minecraft_java_categories
+    question: "What are the main Minecraft speedrun categories?"
+    sql: |
+      SELECT 
+        c.category_name,
+        COUNT(DISTINCT r.run_id) as run_count
+      FROM KJ_SPEEDRUN.PUBLIC.games g
+      JOIN KJ_SPEEDRUN.PUBLIC.runs r ON g.game_id = r.game_id
+      JOIN KJ_SPEEDRUN.PUBLIC.categories c ON r.category_id = c.category_id
+      WHERE g.game_name = 'Minecraft: Java Edition'
+        AND r.status = 'verified'
+      GROUP BY c.category_name
+      ORDER BY run_count DESC
+      LIMIT 15
+  - name: world_record_query
+    question: "What is the world record for a specific game and category?"
+    sql: |
+      SELECT 
+        g.game_name,
+        c.category_name,
+        r.primary_time,
+        FLOOR(r.primary_time / 60) || ':' || LPAD(FLOOR(r.primary_time % 60)::STRING, 2, '0') as formatted_time,
+        r.date,
+        u.username,
+        p.platform_name
+      FROM KJ_SPEEDRUN.PUBLIC.runs r
+      JOIN KJ_SPEEDRUN.PUBLIC.games g ON r.game_id = g.game_id
+      JOIN KJ_SPEEDRUN.PUBLIC.categories c ON r.category_id = c.category_id
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.platforms p ON r.platform = p.platform_id
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.users u ON r.players[0]::STRING = u.user_id
+      WHERE g.game_name = 'Minecraft: Java Edition'
+        AND c.category_name = 'Any% Glitchless'
+        AND r.status = 'verified'
+        AND r.level_id IS NULL
+      ORDER BY r.primary_time ASC
+      LIMIT 1
+  - name: franchise_games_list
+    question: "What games are in a specific franchise?"
+    sql: |
+      SELECT 
+        g.game_name,
+        COUNT(DISTINCT r.run_id) as run_count
+      FROM KJ_SPEEDRUN.PUBLIC.franchises f
+      JOIN KJ_SPEEDRUN.PUBLIC.games g ON f.game_id = g.game_id
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.runs r ON g.game_id = r.game_id AND r.status = 'verified'
+      WHERE f.franchise_name = 'The Legend of Zelda'
+      GROUP BY g.game_name
+      ORDER BY run_count DESC
+  - name: franchise_platform_breakdown
+    question: "Which platforms are most popular for each game franchise?"
+    sql: |
+      SELECT 
+        f.franchise_name,
+        p.platform_name,
+        COUNT(DISTINCT r.run_id) as verified_runs,
+        COUNT(DISTINCT f.game_id) as game_count,
+        ROUND(COUNT(DISTINCT r.run_id)::FLOAT / SUM(COUNT(DISTINCT r.run_id)) OVER (PARTITION BY f.franchise_name) * 100, 1) as pct_of_franchise_runs
+      FROM KJ_SPEEDRUN.PUBLIC.franchises f
+      JOIN KJ_SPEEDRUN.PUBLIC.runs r ON f.game_id = r.game_id
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.platforms p ON r.platform = p.platform_id
+      WHERE r.status = 'verified'
+        AND f.franchise_name IS NOT NULL
+        AND f.franchise_name IN ('Minecraft', 'Super Mario', 'The Legend of Zelda', 'Portal')
+      GROUP BY f.franchise_name, p.platform_name
+      ORDER BY f.franchise_name, verified_runs DESC
+  
+  - name: platform_rejection_rates
+    question: "Which platforms have the highest rejection rates for speedruns?"
+    sql: |
+      SELECT 
+        p.platform_name,
+        COUNT(DISTINCT r.run_id) as total_runs,
+        SUM(CASE WHEN r.status IN ('rejected', 'new') THEN 1 ELSE 0 END) as rejected_unvalidated_runs,
+        SUM(CASE WHEN r.status = 'verified' THEN 1 ELSE 0 END) as verified_runs,
+        ROUND(SUM(CASE WHEN r.status IN ('rejected', 'new') THEN 1 ELSE 0 END)::FLOAT / COUNT(DISTINCT r.run_id) * 100, 2) as pct_rejected_unvalidated,
+        ROUND(SUM(CASE WHEN r.status = 'verified' THEN 1 ELSE 0 END)::FLOAT / COUNT(DISTINCT r.run_id) * 100, 2) as pct_verified
+      FROM KJ_SPEEDRUN.PUBLIC.runs r
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.platforms p ON r.platform = p.platform_id
+      GROUP BY p.platform_name
+      HAVING COUNT(DISTINCT r.run_id) > 1000
+      ORDER BY pct_rejected_unvalidated DESC
+      LIMIT 30
+  
+  - name: platform_rejected_runs_absolute
+    question: "Which platforms have the most rejected or unvalidated speedruns in absolute numbers?"
+    sql: |
+      SELECT 
+        p.platform_name,
+        COUNT(DISTINCT r.run_id) as rejected_unvalidated_runs,
+        SUM(CASE WHEN r.status = 'rejected' THEN 1 ELSE 0 END) as rejected_runs,
+        SUM(CASE WHEN r.status = 'new' THEN 1 ELSE 0 END) as unvalidated_runs
+      FROM KJ_SPEEDRUN.PUBLIC.runs r
+      LEFT JOIN KJ_SPEEDRUN.PUBLIC.platforms p ON r.platform = p.platform_id
+      WHERE r.status IN ('rejected', 'new')
+      GROUP BY p.platform_name
+      ORDER BY rejected_unvalidated_runs DESC
+      LIMIT 20
