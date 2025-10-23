@@ -1,0 +1,15 @@
+name: INVALID
+description: This has invalid YAML syntax
+tables:
+  - name: TEST
+    base_table:
+      database: DB
+      schema: PUBLIC
+      table: TEST
+    dimensions:
+      - name: ID
+        expr: ID
+        data_type: VARCHAR
+      - name: MISSING_COLON
+        expr ID_EXPR
+        data_type: VARCHAR

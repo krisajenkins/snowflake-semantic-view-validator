@@ -1,0 +1,15 @@
+════════════════════════════════════════════════════════════════════════════════
+  VALIDATION ERROR
+════════════════════════════════════════════════════════════════════════════════
+
+✗ Failed to parse YAML file: missing field `name`
+
+TIP:
+  Check the YAML syntax at the indicated line and column.
+  Common issues include:
+    • Incorrect indentation (use spaces, not tabs)
+    • Missing colons after keys
+    • Unquoted strings containing special characters
+    • Missing required fields
+
+════════════════════════════════════════════════════════════════════════════════

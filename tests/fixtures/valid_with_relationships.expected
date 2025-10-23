@@ -1,0 +1,34 @@
+════════════════════════════════════════════════════════════════════════════════
+  SEMANTIC MODEL VALIDATION SUMMARY
+════════════════════════════════════════════════════════════════════════════════
+
+Name: WITH_RELATIONSHIPS
+Description: This semantic model includes relationships and custom queries
+
+TABLES
+────────────────────────────────────────────────────────────────────────────────
+  • CUSTOMERS
+    Location: SALES_DB.PUBLIC.CUSTOMERS
+    Dimensions: 2
+    Time Dimensions: 0
+    Facts: 0
+
+  • ORDERS
+    Location: SALES_DB.PUBLIC.ORDERS
+    Dimensions: 2
+    Time Dimensions: 1
+    Facts: 1
+
+RELATIONSHIPS
+────────────────────────────────────────────────────────────────────────────────
+  • customer_orders
+    LEFT CUSTOMERS → ORDERS
+
+CUSTOM QUERIES
+────────────────────────────────────────────────────────────────────────────────
+  • top_customers
+    Find the top 10 customers by order amount
+
+════════════════════════════════════════════════════════════════════════════════
+✓ Validation successful!
+════════════════════════════════════════════════════════════════════════════════

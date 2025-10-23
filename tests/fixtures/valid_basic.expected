@@ -1,0 +1,32 @@
+════════════════════════════════════════════════════════════════════════════════
+  SEMANTIC MODEL VALIDATION SUMMARY
+════════════════════════════════════════════════════════════════════════════════
+
+Name: SPEEDRUN
+Description: This semantic model describes the Speedrun dataset from Kaggle, based on Speedrun.com. Many gamers who have competed to be the fastest to complete specific video games.
+
+TABLES
+────────────────────────────────────────────────────────────────────────────────
+  • GAMES
+    Location: KJ_SPEEDRUN.PUBLIC.GAMES
+    Dimensions: 16
+    Time Dimensions: 2
+    Facts: 0
+
+  • LEADERBOARDS
+    Location: KJ_SPEEDRUN.PUBLIC.LEADERBOARDS
+    Dimensions: 10
+    Time Dimensions: 2
+    Facts: 4
+
+RELATIONSHIPS
+────────────────────────────────────────────────────────────────────────────────
+  No relationships defined
+
+CUSTOM QUERIES
+────────────────────────────────────────────────────────────────────────────────
+  No custom queries defined
+
+════════════════════════════════════════════════════════════════════════════════
+✓ Validation successful!
+════════════════════════════════════════════════════════════════════════════════

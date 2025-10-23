@@ -1,0 +1,122 @@
+name: SPEEDRUN
+description: This semantic model describes the Speedrun dataset from Kaggle, based
+  on Speedrun.com. Many gamers who have competed to be the fastest to complete specific
+  video games.
+tables:
+  - name: GAMES
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: GAMES
+    dimensions:
+      - name: GAMEID
+        expr: GAMEID
+        data_type: VARCHAR
+      - name: GAMENAME
+        expr: GAMENAME
+        data_type: VARCHAR
+      - name: URL
+        expr: URL
+        data_type: VARCHAR
+      - name: GAMETYPES
+        expr: GAMETYPES
+        data_type: VARCHAR
+      - name: PLATFORMS
+        expr: PLATFORMS
+        data_type: VARCHAR
+      - name: REGIONS
+        expr: REGIONS
+        data_type: VARCHAR
+      - name: GENRES
+        expr: GENRES
+        data_type: VARCHAR
+      - name: ENGINES
+        expr: ENGINES
+        data_type: VARCHAR
+      - name: DEVELOPERS
+        expr: DEVELOPERS
+        data_type: VARCHAR
+      - name: PUBLISHERS
+        expr: PUBLISHERS
+        data_type: VARCHAR
+      - name: RUNSREQUIREVERIFICATION
+        expr: RUNSREQUIREVERIFICATION
+        data_type: BOOLEAN
+      - name: RUNSREQUIREVIDEO
+        expr: RUNSREQUIREVIDEO
+        data_type: BOOLEAN
+      - name: RUNTIMINGOPTIONS
+        expr: RUNTIMINGOPTIONS
+        data_type: VARCHAR
+      - name: RUNDEFAULTTIMINGOPTION
+        expr: RUNDEFAULTTIMINGOPTION
+        data_type: VARCHAR
+      - name: RUNSEMULATORSALLOWED
+        expr: RUNSEMULATORSALLOWED
+        data_type: BOOLEAN
+      - name: ISROMHACK
+        expr: ISROMHACK
+        data_type: BOOLEAN
+    time_dimensions:
+      - name: RELEASEDATE
+        expr: RELEASEDATE
+        data_type: DATE
+      - name: CREATEDDATE
+        expr: CREATEDDATE
+        data_type: TIMESTAMP_NTZ
+  - name: LEADERBOARDS
+    base_table:
+      database: KJ_SPEEDRUN
+      schema: PUBLIC
+      table: LEADERBOARDS
+    dimensions:
+      - name: RUNID
+        expr: RUNID
+        data_type: VARCHAR
+      - name: GAMEID
+        expr: GAMEID
+        data_type: VARCHAR
+      - name: CATEGORYID
+        expr: CATEGORYID
+        data_type: VARCHAR
+      - name: LEVELID
+        expr: LEVELID
+        data_type: VARCHAR
+      - name: PLACE
+        expr: PLACE
+        data_type: NUMBER
+      - name: PLATFORM
+        expr: PLATFORM
+        data_type: VARCHAR
+      - name: ISEMULATED
+        expr: ISEMULATED
+        data_type: BOOLEAN
+      - name: PLAYERS
+        expr: PLAYERS
+        data_type: VARCHAR
+      - name: EXAMINER
+        expr: EXAMINER
+        data_type: VARCHAR
+      - name: VARIABLESANDVALUES
+        expr: VARIABLESANDVALUES
+        data_type: VARCHAR
+    time_dimensions:
+      - name: DATE
+        expr: DATE
+        data_type: DATE
+      - name: VERIFIEDDATE
+        expr: VERIFIEDDATE
+        data_type: TIMESTAMP_NTZ
+    facts:
+      - name: PRIMARYTIME
+        expr: PRIMARYTIME
+        data_type: FLOAT
+      - name: REALTIME
+        expr: REALTIME
+        data_type: FLOAT
+      - name: REALTIMENOLOADS
+        expr: REALTIMENOLOADS
+        data_type: FLOAT
+      - name: INGAMETIME
+        expr: INGAMETIME
+        data_type: FLOAT

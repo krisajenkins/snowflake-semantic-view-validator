@@ -15,6 +15,27 @@
           };
         in
         {
+          packages = {
+            ssvv = pkgs.rustPlatform.buildRustPackage {
+              pname = "ssvv";
+              version = "0.1.0";
+              src = ./.;
+
+              cargoLock = {
+                lockFile = ./Cargo.lock;
+              };
+
+              meta = with pkgs.lib; {
+                description = "Snowflake Semantic View Validator";
+                homepage = "https://github.com/krisajenkins/snowflake-semantic-view-validator";
+                license = licenses.mit;
+                maintainers = [ ];
+              };
+            };
+
+            default = self.packages.${system}.ssvv;
+          };
+
           devShells.default =
             with pkgs;
             mkShell {

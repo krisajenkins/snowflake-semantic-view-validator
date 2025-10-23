@@ -1,0 +1,47 @@
+name: WITH_RELATIONSHIPS
+description: This semantic model includes relationships and custom queries
+tables:
+  - name: CUSTOMERS
+    base_table:
+      database: SALES_DB
+      schema: PUBLIC
+      table: CUSTOMERS
+    dimensions:
+      - name: CUSTOMER_ID
+        expr: CUSTOMER_ID
+        data_type: VARCHAR
+        unique: true
+      - name: CUSTOMER_NAME
+        expr: CUSTOMER_NAME
+        data_type: VARCHAR
+  - name: ORDERS
+    base_table:
+      database: SALES_DB
+      schema: PUBLIC
+      table: ORDERS
+    dimensions:
+      - name: ORDER_ID
+        expr: ORDER_ID
+        data_type: VARCHAR
+      - name: CUSTOMER_ID
+        expr: CUSTOMER_ID
+        data_type: VARCHAR
+    time_dimensions:
+      - name: ORDER_DATE
+        expr: ORDER_DATE
+        data_type: DATE
+    facts:
+      - name: AMOUNT
+        expr: AMOUNT
+        data_type: FLOAT
+        aggregation: sum
+relationships:
+  - name: customer_orders
+    left_table: CUSTOMERS
+    right_table: ORDERS
+    join_type: LEFT
+    join_condition: CUSTOMERS.CUSTOMER_ID = ORDERS.CUSTOMER_ID
+custom_queries:
+  - name: top_customers
+    description: Find the top 10 customers by order amount
+    sql: SELECT CUSTOMER_NAME, SUM(AMOUNT) as TOTAL FROM CUSTOMERS JOIN ORDERS USING (CUSTOMER_ID) GROUP BY CUSTOMER_NAME ORDER BY TOTAL DESC LIMIT 10

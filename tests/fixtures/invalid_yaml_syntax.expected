@@ -1,0 +1,15 @@
+════════════════════════════════════════════════════════════════════════════════
+  VALIDATION ERROR
+════════════════════════════════════════════════════════════════════════════════
+
+✗ Failed to parse YAML file: could not find expected ':' at line 15 column 9, while scanning a simple key at line 14 column 9
+
+TIP:
+  Check the YAML syntax at the indicated line and column.
+  Common issues include:
+    • Incorrect indentation (use spaces, not tabs)
+    • Missing colons after keys
+    • Unquoted strings containing special characters
+    • Missing required fields
+
+════════════════════════════════════════════════════════════════════════════════

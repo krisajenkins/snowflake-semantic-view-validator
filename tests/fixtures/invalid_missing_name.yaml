@@ -1,0 +1,11 @@
+description: This is missing a name field
+tables:
+  - name: TEST_TABLE
+    base_table:
+      database: TEST_DB
+      schema: PUBLIC
+      table: TEST
+    dimensions:
+      - name: ID
+        expr: ID
+        data_type: VARCHAR
