@@ -15,7 +15,7 @@
           };
         in
         {
-          packages = {
+          packages = rec {
             ssvv = pkgs.rustPlatform.buildRustPackage {
               pname = "ssvv";
               version = "0.1.0";
@@ -33,26 +33,37 @@
               };
             };
 
-            default = self.packages.${system}.ssvv;
+            default = ssvv;
           };
+
+          apps.default = {
+            type = "app";
+            program = "${self.packages.${system}.ssvv}/bin/ssvv";
+          };
+
+          checks = {
+            build = self.packages.${system}.ssvv;
+            help-test = pkgs.runCommand "ssvv-help-test" { } ''
+              ${self.packages.${system}.ssvv}/bin/ssvv --help
+              touch $out
+            '';
+          };
+
+          formatter = pkgs.nixpkgs-fmt;
 
           devShells.default =
             with pkgs;
             mkShell {
-              buildInputs =
+              nativeBuildInputs =
                 [
                   # Rust
                   cargo
-                  rustc
                   rustfmt
                   rust-analyzer
                   clippy
 
                   cargo-generate
-                  cargo-edit
                   cargo-watch
-
-                  iconv
                 ];
             };
         });
