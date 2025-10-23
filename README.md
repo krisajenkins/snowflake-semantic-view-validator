@@ -50,13 +50,13 @@ cargo build
 cargo install --path .
 ```
 
-### Using Nix (Recommended)
+### Using Nix
 
 If you have Nix with flakes enabled:
 
 ```bash
 nix build .#ssvv
-./result/bin/ssvv
+ls ./result/bin/ssvv
 ```
 
 Or install it to your profile:
