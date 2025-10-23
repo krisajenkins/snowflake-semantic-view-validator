@@ -13,12 +13,13 @@
             config.allowUnfree = true;
             overlays = [ ];
           };
+          cargoToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
         in
         rec {
           packages = rec {
             ssvv = pkgs.rustPlatform.buildRustPackage {
               pname = "ssvv";
-              version = "0.1.3";
+              version = cargoToml.package.version;
               src = ./.;
 
               cargoLock = {
