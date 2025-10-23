@@ -1,9 +1,9 @@
 use clap::Parser;
-use snowflake_semantic_view_validator::{validate_file, format_error, format_success, ColoredDoc};
+use snowflake_semantic_view_validator::{format_error, format_success, validate_file, ColoredDoc};
 use termcolor::{ColorChoice, StandardStream};
 
 /// Snowflake Semantic View Validator (ssvv)
-/// 
+///
 /// Validates Snowflake semantic model YAML files against the official specification.
 #[derive(Parser, Debug)]
 #[command(name = "ssvv")]
@@ -57,21 +57,19 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.file {
-        Some(path) => {
-            match validate_file(&path) {
-                Ok(model) => {
-                    let doc = format_success(&model);
-                    let mut stdout = StandardStream::stdout(ColorChoice::Auto);
-                    doc.render_colored(&mut stdout).unwrap();
-                }
-                Err(e) => {
-                    let doc = format_error(&e);
-                    let mut stderr = StandardStream::stderr(ColorChoice::Auto);
-                    doc.render_colored(&mut stderr).unwrap();
-                    std::process::exit(1);
-                }
+        Some(path) => match validate_file(&path) {
+            Ok(model) => {
+                let doc = format_success(&model);
+                let mut stdout = StandardStream::stdout(ColorChoice::Auto);
+                doc.render_colored(&mut stdout).unwrap();
             }
-        }
+            Err(e) => {
+                let doc = format_error(&e);
+                let mut stderr = StandardStream::stderr(ColorChoice::Auto);
+                doc.render_colored(&mut stderr).unwrap();
+                std::process::exit(1);
+            }
+        },
         None => {
             let help = format_help();
             let mut stdout = StandardStream::stdout(ColorChoice::Auto);

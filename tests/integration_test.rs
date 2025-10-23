@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 // Import the public functions from main.rs
-use snowflake_semantic_view_validator::{validate_file, format_error, format_success};
+use snowflake_semantic_view_validator::{format_error, format_success, validate_file};
 
 fn get_fixture_path(fixture_name: &str) -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -35,9 +35,11 @@ fn run_valid_test_case(fixture_name: &str) {
     let model = result.unwrap();
     let doc = format_success(&model);
     let actual = doc.render_plain();
-    
-    let expected = fs::read_to_string(&expected_path)
-        .expect(&format!("Failed to read expected output file: {:?}", expected_path));
+
+    let expected = fs::read_to_string(&expected_path).expect(&format!(
+        "Failed to read expected output file: {:?}",
+        expected_path
+    ));
 
     assert_eq!(
         actual.trim(),
@@ -63,9 +65,11 @@ fn run_invalid_test_case(fixture_name: &str) {
     let error = result.unwrap_err();
     let doc = format_error(&error);
     let actual = doc.render_plain();
-    
-    let expected = fs::read_to_string(&expected_path)
-        .expect(&format!("Failed to read expected output file: {:?}", expected_path));
+
+    let expected = fs::read_to_string(&expected_path).expect(&format!(
+        "Failed to read expected output file: {:?}",
+        expected_path
+    ));
 
     assert_eq!(
         actual.trim(),
