@@ -1,0 +1,13 @@
+name: minimal_model
+description: A minimal viable semantic model
+
+tables:
+  - name: my_table
+    base_table:
+      database: MY_DB
+      schema: PUBLIC
+      table: MY_TABLE
+    dimensions:
+      - name: id
+        expr: id
+        data_type: NUMBER
