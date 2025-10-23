@@ -89,3 +89,33 @@ pub fn dimmed_spec() -> ColorSpec {
     spec.set_dimmed(true);
     spec
 }
+
+/// Create a major heading with separator lines (uses = for separator)
+pub fn heading(title: impl Into<String>, color: Color) -> ColoredDoc {
+    ColoredDoc::concat(vec![
+        ColoredDoc::colored_text("=".repeat(80), color_spec(color, true)),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text(format!("  {}", title.into()), color_spec(color, true)),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text("=".repeat(80), color_spec(color, true)),
+        ColoredDoc::line(),
+    ])
+}
+
+/// Create a subheading with separator line (uses - for separator)
+pub fn subheading(title: impl Into<String>, color: Color) -> ColoredDoc {
+    ColoredDoc::concat(vec![
+        ColoredDoc::colored_text(title.into(), color_spec(color, true)),
+        ColoredDoc::line(),
+        ColoredDoc::colored_text("-".repeat(80), color_spec(Color::Black, true)),
+        ColoredDoc::line(),
+    ])
+}
+
+/// Create a separator line
+pub fn separator(char: &str, color: Color) -> ColoredDoc {
+    ColoredDoc::concat(vec![
+        ColoredDoc::colored_text(char.repeat(80), color_spec(color, true)),
+        ColoredDoc::line(),
+    ])
+}

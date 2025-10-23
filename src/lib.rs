@@ -1,6 +1,6 @@
 mod colored_doc;
 
-pub use colored_doc::{color_spec, dimmed_spec, ColoredDoc};
+pub use colored_doc::{color_spec, dimmed_spec, heading, subheading, separator, ColoredDoc};
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -301,43 +301,33 @@ pub fn validate_file(path: impl AsRef<Path>) -> Result<ValidationResult, Validat
 
 /// Format a validation error as a ColoredDoc
 pub fn format_error(error: &ValidationError) -> ColoredDoc {
-    ColoredDoc::concat(vec![
-        ColoredDoc::colored_text("=".repeat(80), color_spec(Color::Red, true)),
-        ColoredDoc::line(),
-        ColoredDoc::colored_text("  VALIDATION ERROR", color_spec(Color::Red, true)),
-        ColoredDoc::line(),
-        ColoredDoc::colored_text("=".repeat(80), color_spec(Color::Red, true)),
-        ColoredDoc::line(),
-        ColoredDoc::line(),
-        ColoredDoc::colored_text(format!("* {}", error.message), color_spec(Color::Red, true)),
-        ColoredDoc::line(),
-        ColoredDoc::line(),
-    ])
-    .append(if error.is_yaml_error {
-        ColoredDoc::concat(vec![
-            ColoredDoc::colored_text("TIP:", color_spec(Color::Yellow, true)),
-            ColoredDoc::line(),
-            ColoredDoc::text("  Check the YAML syntax at the indicated line and column."),
-            ColoredDoc::line(),
-            ColoredDoc::text("  Common issues include:"),
-            ColoredDoc::line(),
-            ColoredDoc::text("    * Incorrect indentation (use spaces, not tabs)"),
-            ColoredDoc::line(),
-            ColoredDoc::text("    * Missing colons after keys"),
-            ColoredDoc::line(),
-            ColoredDoc::text("    * Unquoted strings containing special characters"),
-            ColoredDoc::line(),
-            ColoredDoc::text("    * Missing required fields"),
-            ColoredDoc::line(),
-            ColoredDoc::line(),
-        ])
-    } else {
-        ColoredDoc::text("")
-    })
-    .append(ColoredDoc::colored_text(
-        "-".repeat(80),
-        color_spec(Color::Red, true),
-    ))
+    heading("VALIDATION ERROR", Color::Red)
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::colored_text(format!("* {}", error.message), color_spec(Color::Red, true)))
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::line())
+        .append(if error.is_yaml_error {
+            ColoredDoc::concat(vec![
+                ColoredDoc::colored_text("TIP:", color_spec(Color::Yellow, true)),
+                ColoredDoc::line(),
+                ColoredDoc::text("  Check the YAML syntax at the indicated line and column."),
+                ColoredDoc::line(),
+                ColoredDoc::text("  Common issues include:"),
+                ColoredDoc::line(),
+                ColoredDoc::text("    * Incorrect indentation (use spaces, not tabs)"),
+                ColoredDoc::line(),
+                ColoredDoc::text("    * Missing colons after keys"),
+                ColoredDoc::line(),
+                ColoredDoc::text("    * Unquoted strings containing special characters"),
+                ColoredDoc::line(),
+                ColoredDoc::text("    * Missing required fields"),
+                ColoredDoc::line(),
+                ColoredDoc::line(),
+            ])
+        } else {
+            ColoredDoc::text("")
+        })
+        .append(separator("=", Color::Red))
 }
 
 /// Format warnings as a ColoredDoc
@@ -346,18 +336,8 @@ pub fn format_warnings(warnings: &[ValidationWarning]) -> ColoredDoc {
         return ColoredDoc::text("");
     }
 
-    let mut doc = ColoredDoc::concat(vec![
-        ColoredDoc::colored_text("=".repeat(80), color_spec(Color::Yellow, true)),
-        ColoredDoc::line(),
-        ColoredDoc::colored_text(
-            "  WARNINGS",
-            color_spec(Color::Yellow, true),
-        ),
-        ColoredDoc::line(),
-        ColoredDoc::colored_text("=".repeat(80), color_spec(Color::Yellow, true)),
-        ColoredDoc::line(),
-        ColoredDoc::line(),
-    ]);
+    let mut doc = heading("WARNINGS", Color::Yellow)
+        .append(ColoredDoc::line());
 
     for warning in warnings {
         doc = doc
@@ -379,39 +359,22 @@ pub fn format_warnings(warnings: &[ValidationWarning]) -> ColoredDoc {
         doc = doc.append(ColoredDoc::line());
     }
 
-    doc.append(ColoredDoc::colored_text(
-        "-".repeat(80),
-        color_spec(Color::Yellow, true),
-    ))
-    .append(ColoredDoc::line())
-    .append(ColoredDoc::line())
+    doc.append(separator("-", Color::Yellow))
+        .append(ColoredDoc::line())
 }
 
 /// Format a successful validation result as a ColoredDoc
 pub fn format_success(model: &SemanticModel) -> ColoredDoc {
-    let mut doc = ColoredDoc::concat(vec![
-        ColoredDoc::colored_text("=".repeat(80), color_spec(Color::Blue, true)),
-        ColoredDoc::line(),
-        ColoredDoc::colored_text(
-            "  SEMANTIC MODEL VALIDATION SUMMARY",
-            color_spec(Color::Blue, true),
-        ),
-        ColoredDoc::line(),
-        ColoredDoc::colored_text("=".repeat(80), color_spec(Color::Blue, true)),
-        ColoredDoc::line(),
-        ColoredDoc::line(),
-        ColoredDoc::colored_text("Name:", color_spec(Color::Green, true)),
-        ColoredDoc::text(format!(" {}", model.name)),
-        ColoredDoc::line(),
-        ColoredDoc::colored_text("Description:", color_spec(Color::Green, true)),
-        ColoredDoc::text(format!(" {}", model.description)),
-        ColoredDoc::line(),
-        ColoredDoc::line(),
-        ColoredDoc::colored_text("TABLES", color_spec(Color::Yellow, true)),
-        ColoredDoc::line(),
-        ColoredDoc::colored_text("-".repeat(80), color_spec(Color::Black, true)),
-        ColoredDoc::line(),
-    ]);
+    let mut doc = heading("SEMANTIC MODEL VALIDATION SUMMARY", Color::Blue)
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::colored_text("Name:", color_spec(Color::Green, true)))
+        .append(ColoredDoc::text(format!(" {}", model.name)))
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::colored_text("Description:", color_spec(Color::Green, true)))
+        .append(ColoredDoc::text(format!(" {}", model.description)))
+        .append(ColoredDoc::line())
+        .append(ColoredDoc::line())
+        .append(subheading("TABLES", Color::Yellow));
 
     // Add tables
     for table in &model.tables {
@@ -462,16 +425,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
 
     // Relationships section
     doc = doc
-        .append(ColoredDoc::colored_text(
-            "RELATIONSHIPS",
-            color_spec(Color::Yellow, true),
-        ))
-        .append(ColoredDoc::line())
-        .append(ColoredDoc::colored_text(
-            "-".repeat(80),
-            color_spec(Color::Black, true),
-        ))
-        .append(ColoredDoc::line());
+        .append(subheading("RELATIONSHIPS", Color::Yellow));
 
     if model.relationships.is_empty() {
         doc = doc
@@ -516,16 +470,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
 
     // Verified Queries section
     doc = doc
-        .append(ColoredDoc::colored_text(
-            "VERIFIED QUERIES",
-            color_spec(Color::Yellow, true),
-        ))
-        .append(ColoredDoc::line())
-        .append(ColoredDoc::colored_text(
-            "-".repeat(80),
-            color_spec(Color::Black, true),
-        ))
-        .append(ColoredDoc::line());
+        .append(subheading("VERIFIED QUERIES", Color::Yellow));
 
     if model.verified_queries.is_empty() {
         doc = doc
@@ -556,16 +501,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
 
     // Custom Instructions section
     doc = doc
-        .append(ColoredDoc::colored_text(
-            "CUSTOM INSTRUCTIONS",
-            color_spec(Color::Yellow, true),
-        ))
-        .append(ColoredDoc::line())
-        .append(ColoredDoc::colored_text(
-            "-".repeat(80),
-            color_spec(Color::Black, true),
-        ))
-        .append(ColoredDoc::line());
+        .append(subheading("CUSTOM INSTRUCTIONS", Color::Yellow));
 
     let has_any_instructions = model.custom_instructions.is_some() 
         || model.module_custom_instructions.is_some();
@@ -663,11 +599,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
     doc = doc.append(ColoredDoc::line());
 
     // Success footer
-    doc.append(ColoredDoc::colored_text(
-        "=".repeat(80),
-        color_spec(Color::Blue, true),
-    ))
-    .append(ColoredDoc::line())
+    doc.append(separator("=", Color::Blue))
     .append(ColoredDoc::colored_text(
         "*",
         color_spec(Color::Green, true),
@@ -678,8 +610,5 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
         color_spec(Color::Green, false),
     ))
     .append(ColoredDoc::line())
-    .append(ColoredDoc::colored_text(
-        "=".repeat(80),
-        color_spec(Color::Blue, true),
-    ))
+    .append(separator("=", Color::Blue))
 }
