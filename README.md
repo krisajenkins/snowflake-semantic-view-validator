@@ -15,21 +15,57 @@ Example:
 ```bash
 ssvv speedrun.yaml
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
   SEMANTIC MODEL VALIDATION SUMMARY
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 
-Name: SPEEDRUN
-Description: This semantic model describes the Speedrun dataset...
+Name: speedrun_semantic_model
+Description: Semantic model for speedrun data including games, runs, users, and leaderboards.
 
-TABLES
-────────────────────────────────────────────────────────────────────────────────
-  • GAMES
-    Location: KJ_SPEEDRUN.PUBLIC.GAMES
-    Dimensions: 16
-    Time Dimensions: 2
-    Facts: 0
+IMPORTANT: Data Freshness
+- The database contains historical speedrun data
+- Before using time-based filters, check the actual date range with:
+  SELECT MAX(date) as most_recent_run, MIN(date) as oldest_run FROM KJ_SPEEDRUN.PUBLIC.runs
+- Adjust time filters based on available data rather than CURRENT_DATE() if data is not current
+
+
+TABLES (17)
+--------------------------------------------------------------------------------
+Name          | Location                         | Dimensions | Time | Facts | Metrics | Filters
+--------------|----------------------------------|------------|------|-------|---------|--------
+games         | KJ_SPEEDRUN.PUBLIC.games         |         16 |    2 |     0 |       0 |       4
+runs          | KJ_SPEEDRUN.PUBLIC.runs          |         11 |    2 |     4 |       0 |       6
+users         | KJ_SPEEDRUN.PUBLIC.users         |          3 |    1 |     0 |       0 |       0
 ...
+
+RELATIONSHIPS (19)
+--------------------------------------------------------------------------------
+Name                         | Join Type  | Left Table    | Right Table   | Type        | Columns                                                   
+-----------------------------|------------|---------------|---------------|-------------|-----------------------------------------------------------
+runs_to_games                | left_outer | runs          | games         | many_to_one | game_id = game_id                                         
+runs_to_categories           | left_outer | runs          | categories    | many_to_one | category_id = category_id                                 
+...
+
+VERIFIED QUERIES (21)
+--------------------------------------------------------------------------------
+Name                                | Question                                                                                
+------------------------------------|-----------------------------------------------------------------------------------------
+genre_popularity                    | What are the game genres we have listed, and how popular are they?                      
+total_individual_level_runs         | How many individual level runs are there across all games?                              
+...
+
+CUSTOM INSTRUCTIONS
+--------------------------------------------------------------------------------
+  module_custom_instructions:
+    sql_generation:
+      ## Query Construction Guidelines
+      
+      1. **Always use fully qualified table names**: All tables must be referenced as `KJ_SPEEDRUN.PUBLIC.table_name`
+      ...
+
+================================================================================
+* Validation successful!
+================================================================================
 ```
 
 ### Show help
