@@ -7,21 +7,10 @@ Description: This semantic model describes the Speedrun dataset from Kaggle, bas
 
 TABLES
 --------------------------------------------------------------------------------
-  * GAMES
-    Location: KJ_SPEEDRUN.PUBLIC.GAMES
-    Dimensions: 16
-    Time Dimensions: 2
-    Facts: 0
-    Metrics: 0
-    Filters: 0
-
-  * LEADERBOARDS
-    Location: KJ_SPEEDRUN.PUBLIC.LEADERBOARDS
-    Dimensions: 10
-    Time Dimensions: 2
-    Facts: 4
-    Metrics: 0
-    Filters: 0
+Name         | Location                        | Dimensions | Time | Facts | Metrics | Filters
+-------------|---------------------------------|------------|------|-------|---------|--------
+GAMES        | KJ_SPEEDRUN.PUBLIC.GAMES        |         16 |    2 |     0 |       0 |       0
+LEADERBOARDS | KJ_SPEEDRUN.PUBLIC.LEADERBOARDS |         10 |    2 |     4 |       0 |       0
 
 RELATIONSHIPS
 --------------------------------------------------------------------------------

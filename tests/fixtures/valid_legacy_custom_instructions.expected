@@ -1,9 +1,29 @@
 ================================================================================
+  WARNINGS
+================================================================================
+
+* The 'custom_instructions' field is deprecated. Consider migrating to 'module_custom_instructions'.
+
+  Suggestion:
+  Replace:
+    custom_instructions: |
+      Ensure that all numeric columns are rounded to 2 decimal points in the output.
+      For any percentage or rate calculation, multiply the result by 100.
+  
+  With:
+    module_custom_instructions:
+      sql_generation: |
+        Ensure that all numeric columns are rounded to 2 decimal points in the output.
+        For any percentage or rate calculation, multiply the result by 100.
+
+--------------------------------------------------------------------------------
+
+================================================================================
   SEMANTIC MODEL VALIDATION SUMMARY
 ================================================================================
 
-Name: MODULE_INSTRUCTIONS_EXAMPLE
-Description: Example demonstrating module_custom_instructions
+Name: LEGACY_INSTRUCTIONS_EXAMPLE
+Description: Example with legacy custom_instructions (should trigger warning)
 
 TABLES
 --------------------------------------------------------------------------------
@@ -21,14 +41,18 @@ VERIFIED QUERIES
 
 CUSTOM INSTRUCTIONS
 --------------------------------------------------------------------------------
-  module_custom_instructions:
-    question_categorization:
-      - If the question asks for users without providing a product_type, consider this question UNCLEAR and ask the user to specify product_type.
-      - Reject all questions asking about salary information. Ask users to contact their admin.
+  [DEPRECATED] custom_instructions:
+    Ensure that all numeric columns are rounded to 2 decimal points in the output.
+    For any percentage or rate calculation, multiply the result by 100.
 
-    sql_generation:
+  MIGRATION NEEDED:
+  Replace the above with:
+
+  module_custom_instructions:
+    sql_generation: |
       Ensure that all numeric columns are rounded to 2 decimal points in the output.
       For any percentage or rate calculation, multiply the result by 100.
+
 
 ================================================================================
 * Validation successful!

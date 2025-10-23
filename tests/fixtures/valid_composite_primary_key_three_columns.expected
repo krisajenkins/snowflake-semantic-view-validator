@@ -7,13 +7,9 @@ Description: Test semantic model with three-column composite primary key
 
 TABLES
 --------------------------------------------------------------------------------
-  * SALES_TRANSACTIONS
-    Location: SALES_DB.PUBLIC.SALES_TRANSACTIONS
-    Dimensions: 4
-    Time Dimensions: 1
-    Facts: 1
-    Metrics: 0
-    Filters: 0
+Name               | Location                           | Dimensions | Time | Facts | Metrics | Filters
+-------------------|------------------------------------|------------|------|-------|---------|--------
+SALES_TRANSACTIONS | SALES_DB.PUBLIC.SALES_TRANSACTIONS |          4 |    1 |     1 |       0 |       0
 
 RELATIONSHIPS
 --------------------------------------------------------------------------------

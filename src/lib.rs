@@ -1,6 +1,9 @@
 mod colored_doc;
 
-pub use colored_doc::{color_spec, dimmed_spec, heading, subheading, separator, ColoredDoc};
+pub use colored_doc::{
+    color_spec, dimmed_spec, heading, separator, subheading, Alignment, Cell, ColoredDoc, Column,
+    Table as TableRenderer,
+};
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -284,8 +287,9 @@ pub fn validate_file(path: impl AsRef<Path>) -> Result<ValidationResult, Validat
 
     // Validate module_custom_instructions if present
     if let Some(ref module_instructions) = model.module_custom_instructions {
-        if module_instructions.question_categorization.is_none() 
-            && module_instructions.sql_generation.is_none() {
+        if module_instructions.question_categorization.is_none()
+            && module_instructions.sql_generation.is_none()
+        {
             return Err(ValidationError {
                 message: "'module_custom_instructions' must have at least one of 'question_categorization' or 'sql_generation' defined".to_string(),
                 is_yaml_error: false,
@@ -293,17 +297,17 @@ pub fn validate_file(path: impl AsRef<Path>) -> Result<ValidationResult, Validat
         }
     }
 
-    Ok(ValidationResult {
-        model,
-        warnings,
-    })
+    Ok(ValidationResult { model, warnings })
 }
 
 /// Format a validation error as a ColoredDoc
 pub fn format_error(error: &ValidationError) -> ColoredDoc {
     heading("VALIDATION ERROR", Color::Red)
         .append(ColoredDoc::line())
-        .append(ColoredDoc::colored_text(format!("* {}", error.message), color_spec(Color::Red, true)))
+        .append(ColoredDoc::colored_text(
+            format!("* {}", error.message),
+            color_spec(Color::Red, true),
+        ))
         .append(ColoredDoc::line())
         .append(ColoredDoc::line())
         .append(if error.is_yaml_error {
@@ -336,19 +340,27 @@ pub fn format_warnings(warnings: &[ValidationWarning]) -> ColoredDoc {
         return ColoredDoc::text("");
     }
 
-    let mut doc = heading("WARNINGS", Color::Yellow)
-        .append(ColoredDoc::line());
+    let mut doc = heading("WARNINGS", Color::Yellow).append(ColoredDoc::line());
 
     for warning in warnings {
         doc = doc
-            .append(ColoredDoc::colored_text("* ", color_spec(Color::Yellow, true)))
-            .append(ColoredDoc::colored_text(&warning.message, color_spec(Color::Yellow, false)))
+            .append(ColoredDoc::colored_text(
+                "* ",
+                color_spec(Color::Yellow, true),
+            ))
+            .append(ColoredDoc::colored_text(
+                &warning.message,
+                color_spec(Color::Yellow, false),
+            ))
             .append(ColoredDoc::line());
 
         if let Some(suggestion) = &warning.suggestion {
             doc = doc
                 .append(ColoredDoc::line())
-                .append(ColoredDoc::colored_text("  Suggestion:", color_spec(Color::Cyan, true)))
+                .append(ColoredDoc::colored_text(
+                    "  Suggestion:",
+                    color_spec(Color::Cyan, true),
+                ))
                 .append(ColoredDoc::line())
                 .append(ColoredDoc::colored_text(
                     format!("  {}", suggestion.lines().collect::<Vec<_>>().join("\n  ")),
@@ -367,65 +379,60 @@ pub fn format_warnings(warnings: &[ValidationWarning]) -> ColoredDoc {
 pub fn format_success(model: &SemanticModel) -> ColoredDoc {
     let mut doc = heading("SEMANTIC MODEL VALIDATION SUMMARY", Color::Blue)
         .append(ColoredDoc::line())
-        .append(ColoredDoc::colored_text("Name:", color_spec(Color::Green, true)))
+        .append(ColoredDoc::colored_text(
+            "Name:",
+            color_spec(Color::Green, true),
+        ))
         .append(ColoredDoc::text(format!(" {}", model.name)))
         .append(ColoredDoc::line())
-        .append(ColoredDoc::colored_text("Description:", color_spec(Color::Green, true)))
+        .append(ColoredDoc::colored_text(
+            "Description:",
+            color_spec(Color::Green, true),
+        ))
         .append(ColoredDoc::text(format!(" {}", model.description)))
         .append(ColoredDoc::line())
         .append(ColoredDoc::line())
         .append(subheading("TABLES", Color::Yellow));
 
-    // Add tables
-    for table in &model.tables {
-        doc = doc
-            .append(ColoredDoc::text("  "))
-            .append(ColoredDoc::colored_text("*", color_spec(Color::Cyan, true)))
-            .append(ColoredDoc::text(" "))
-            .append(ColoredDoc::colored_text(
-                &table.name,
-                color_spec(Color::White, true),
-            ))
-            .append(ColoredDoc::line())
-            .append(ColoredDoc::colored_text(
-                format!(
-                    "    Location: {}.{}.{}",
-                    table.base_table.database, table.base_table.schema, table.base_table.table
-                ),
-                dimmed_spec(),
-            ))
-            .append(ColoredDoc::line())
-            .append(ColoredDoc::colored_text(
-                format!("    Dimensions: {}", table.dimensions.len()),
-                dimmed_spec(),
-            ))
-            .append(ColoredDoc::line())
-            .append(ColoredDoc::colored_text(
-                format!("    Time Dimensions: {}", table.time_dimensions.len()),
-                dimmed_spec(),
-            ))
-            .append(ColoredDoc::line())
-            .append(ColoredDoc::colored_text(
-                format!("    Facts: {}", table.facts.len()),
-                dimmed_spec(),
-            ))
-            .append(ColoredDoc::line())
-            .append(ColoredDoc::colored_text(
-                format!("    Metrics: {}", table.metrics.len()),
-                dimmed_spec(),
-            ))
-            .append(ColoredDoc::line())
-            .append(ColoredDoc::colored_text(
-                format!("    Filters: {}", table.filters.len()),
-                dimmed_spec(),
-            ))
-            .append(ColoredDoc::line())
-            .append(ColoredDoc::line());
+    // Build table for tables section - column by column
+    let mut name_col = Column::new("Name");
+    let mut location_col = Column::new("Location");
+    let mut dims_col = Column::new_aligned("Dimensions", Alignment::Right);
+    let mut time_col = Column::new_aligned("Time", Alignment::Right);
+    let mut facts_col = Column::new_aligned("Facts", Alignment::Right);
+    let mut metrics_col = Column::new_aligned("Metrics", Alignment::Right);
+    let mut filters_col = Column::new_aligned("Filters", Alignment::Right);
+
+    for table_item in &model.tables {
+        name_col = name_col.add_cell(Cell::text(&table_item.name));
+        location_col = location_col.add_cell(Cell::text(format!(
+            "{}.{}.{}",
+            table_item.base_table.database,
+            table_item.base_table.schema,
+            table_item.base_table.table
+        )));
+        dims_col = dims_col.add_cell(Cell::text(table_item.dimensions.len().to_string()));
+        time_col = time_col.add_cell(Cell::text(table_item.time_dimensions.len().to_string()));
+        facts_col = facts_col.add_cell(Cell::text(table_item.facts.len().to_string()));
+        metrics_col = metrics_col.add_cell(Cell::text(table_item.metrics.len().to_string()));
+        filters_col = filters_col.add_cell(Cell::text(table_item.filters.len().to_string()));
     }
 
-    // Relationships section
+    let table_renderer = TableRenderer::new()
+        .add_column(name_col)
+        .add_column(location_col)
+        .add_column(dims_col)
+        .add_column(time_col)
+        .add_column(facts_col)
+        .add_column(metrics_col)
+        .add_column(filters_col);
+
     doc = doc
-        .append(subheading("RELATIONSHIPS", Color::Yellow));
+        .append(table_renderer.render())
+        .append(ColoredDoc::line());
+
+    // Relationships section
+    doc = doc.append(subheading("RELATIONSHIPS", Color::Yellow));
 
     if model.relationships.is_empty() {
         doc = doc
@@ -469,8 +476,7 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
     doc = doc.append(ColoredDoc::line());
 
     // Verified Queries section
-    doc = doc
-        .append(subheading("VERIFIED QUERIES", Color::Yellow));
+    doc = doc.append(subheading("VERIFIED QUERIES", Color::Yellow));
 
     if model.verified_queries.is_empty() {
         doc = doc
@@ -500,11 +506,10 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
     doc = doc.append(ColoredDoc::line());
 
     // Custom Instructions section
-    doc = doc
-        .append(subheading("CUSTOM INSTRUCTIONS", Color::Yellow));
+    doc = doc.append(subheading("CUSTOM INSTRUCTIONS", Color::Yellow));
 
-    let has_any_instructions = model.custom_instructions.is_some() 
-        || model.module_custom_instructions.is_some();
+    let has_any_instructions =
+        model.custom_instructions.is_some() || model.module_custom_instructions.is_some();
 
     if !has_any_instructions {
         doc = doc
@@ -523,7 +528,10 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
                 ))
                 .append(ColoredDoc::line())
                 .append(ColoredDoc::colored_text(
-                    format!("    {}", instructions.lines().collect::<Vec<_>>().join("\n    ")),
+                    format!(
+                        "    {}",
+                        instructions.lines().collect::<Vec<_>>().join("\n    ")
+                    ),
                     dimmed_spec(),
                 ))
                 .append(ColoredDoc::line())
@@ -550,7 +558,10 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
                 ))
                 .append(ColoredDoc::line())
                 .append(ColoredDoc::colored_text(
-                    format!("      {}", instructions.lines().collect::<Vec<_>>().join("\n      ")),
+                    format!(
+                        "      {}",
+                        instructions.lines().collect::<Vec<_>>().join("\n      ")
+                    ),
                     color_spec(Color::Green, false),
                 ))
                 .append(ColoredDoc::line())
@@ -574,7 +585,10 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
                     ))
                     .append(ColoredDoc::line())
                     .append(ColoredDoc::colored_text(
-                        format!("      {}", question_cat.lines().collect::<Vec<_>>().join("\n      ")),
+                        format!(
+                            "      {}",
+                            question_cat.lines().collect::<Vec<_>>().join("\n      ")
+                        ),
                         dimmed_spec(),
                     ))
                     .append(ColoredDoc::line())
@@ -589,7 +603,10 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
                     ))
                     .append(ColoredDoc::line())
                     .append(ColoredDoc::colored_text(
-                        format!("      {}", sql_gen.lines().collect::<Vec<_>>().join("\n      ")),
+                        format!(
+                            "      {}",
+                            sql_gen.lines().collect::<Vec<_>>().join("\n      ")
+                        ),
                         dimmed_spec(),
                     ))
                     .append(ColoredDoc::line());
@@ -600,15 +617,15 @@ pub fn format_success(model: &SemanticModel) -> ColoredDoc {
 
     // Success footer
     doc.append(separator("=", Color::Blue))
-    .append(ColoredDoc::colored_text(
-        "*",
-        color_spec(Color::Green, true),
-    ))
-    .append(ColoredDoc::text(" "))
-    .append(ColoredDoc::colored_text(
-        "Validation successful!",
-        color_spec(Color::Green, false),
-    ))
-    .append(ColoredDoc::line())
-    .append(separator("=", Color::Blue))
+        .append(ColoredDoc::colored_text(
+            "*",
+            color_spec(Color::Green, true),
+        ))
+        .append(ColoredDoc::text(" "))
+        .append(ColoredDoc::colored_text(
+            "Validation successful!",
+            color_spec(Color::Green, false),
+        ))
+        .append(ColoredDoc::line())
+        .append(separator("=", Color::Blue))
 }
